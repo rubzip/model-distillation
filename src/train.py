@@ -1,5 +1,6 @@
 from .early_stopping import EarlyStopping
 from .criterion import Criterion
+from .metrics import ClassificationMetrics
 from .model import Model
 
 def train(
