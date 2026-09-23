@@ -9,8 +9,20 @@ class Metrics:
     f1: float
 
     def __str__(self):
-        return f"Acc: {self.accuracy} | Prec: {self.precision} | Recall: {self.recall} | F1: {self.f1}"
+        return f"Acc: {self.accuracy:.4f} | Prec: {self.precision:.4f} | Recall: {self.recall:.4f} | F1: {self.f1:.4f}"
 
+class History:
+    def __init__(self):
+        self.n_epochs = 0
+        self.train_losses: list[float] = []
+        self.val_losses: list[float] = []
+        self.results: list[Metrics] = []
+
+    def add(self, train_loss:float, val_loss: float, result: Metrics):
+        self.n_epochs += 1
+        self.train_losses.append(train_loss)
+        self.val_losses.append(val_loss)
+        self.results.append(result)
 
 class ClassificationMetrics:
     def __init__(self, num_classes: int):
