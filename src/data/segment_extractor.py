@@ -6,10 +6,9 @@ from dataclasses import asdict
 from typing import List, Generator, Tuple
 import numpy as np
 
-# Asumimos que AudioMetadata, AudioSegmentMetadata, AUDIO_LENGTH, y FREQUENCY_SAMPLE
-# ya están importados o definidos en este punto.
+from .metadata import AudioMetadata, AudioSegmentMetadata
 
-class DatasetBuilder:
+class SegmentExtractor:
     def __init__(self, output_base_dir: Path, target_sr: int = 16000, segment_steps: int = 16000):
         self.output_base_dir = Path(output_base_dir)
         self.target_sr = target_sr
