@@ -1,6 +1,7 @@
+import torch
 from .early_stopping import EarlyStopping
-from .criterion import Criterion
-from .metrics import ClassificationMetrics
+from .criterion import AbstractCriterion
+from .metrics import ClassificationMetrics, Metrics
 from .model import Model
 
 def train(
@@ -10,11 +11,12 @@ def train(
     train_loader: torch.utils.data.DataLoader, 
     val_loader: torch.utils.data.DataLoader, 
     optimizer: torch.optim.Optimizer, 
-    criterion: Criterion,
+    criterion: AbstractCriterion,         # Actualizado al tipo correcto
+    metrics: ClassificationMetrics,       # <-- Añadido como parámetro
     device: torch.device = torch.device("cpu")
-):
+) -> Metrics:
     """
-    Standard training loop utilizing the EarlyStopping mechanism.
+    Standard training loop utilizing the EarlyStopping mechanism and metrics.
     """
     model.to(device)
     
@@ -28,7 +30,7 @@ def train(
             
             optimizer.zero_grad()
             e_pred, y_pred = model(x)
-            loss = criterion(e, e_pred, y, y_pred)
+            loss = criterion(e_true=e, e_pred=e_pred, y_true=y, y_pred=y_pred)
             
             loss.backward()
             optimizer.step()
@@ -40,22 +42,27 @@ def train(
         # --- Validation Phase ---
         model.eval()
         val_loss = 0.0
+        metrics.reset()
         
         with torch.no_grad():
             for x, e, y in val_loader:
                 x, e, y = x.to(device), e.to(device), y.to(device)
+                
                 e_pred, y_pred = model(x)
-                loss = criterion(e, e_pred, y, y_pred)
+                loss = criterion(e_true=e, e_pred=e_pred, y_true=y, y_pred=y_pred)
+                
                 val_loss += loss.item() * x.size(0)
+                metrics.update(y_pred_logits=y_pred, y_true=y)
                 
         val_loss /= len(val_loader.dataset)
+
+        m_results = metrics.compute()
         
-        print(f"Epoch {epoch+1}/{max_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+        print(f"Epoch {epoch+1}/{max_epochs} | Train Loss: {train_loss:.4f} | {m_results}")
         
-        # --- Early Stopping Check ---
-        # Note: ea() internally increments its own epoch counter
         ea(value=val_loss, model=model)
-        
         if ea.early_stop:
             print("Training terminated by EarlyStopping.")
             break
+
+    return m_results
