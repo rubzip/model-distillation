@@ -1,7 +1,7 @@
 import torch
 from .early_stopping import EarlyStopping
 from .criterion import AbstractCriterion
-from .metrics import ClassificationMetrics, Metrics
+from .metrics import ClassificationMetrics, Metrics, History
 from .model import Model
 
 def train(
@@ -14,11 +14,12 @@ def train(
     criterion: AbstractCriterion,         # Actualizado al tipo correcto
     metrics: ClassificationMetrics,       # <-- Añadido como parámetro
     device: torch.device = torch.device("cpu")
-) -> Metrics:
+) -> History:
     """
     Standard training loop utilizing the EarlyStopping mechanism and metrics.
     """
     model.to(device)
+    history = History()
     
     for epoch in range(max_epochs):
         # --- Training Phase ---
@@ -57,6 +58,7 @@ def train(
         val_loss /= len(val_loader.dataset)
 
         m_results = metrics.compute()
+        history.add(train_loss, val_loss, m_results)
         
         print(f"Epoch {epoch+1}/{max_epochs} | Train Loss: {train_loss:.4f} | {m_results}")
         
@@ -65,4 +67,4 @@ def train(
             print("Training terminated by EarlyStopping.")
             break
 
-    return m_results
+    return history, ea.best_epoch
