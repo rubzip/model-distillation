@@ -2,12 +2,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from enum import Enum
+from enum import StrEnum
 
-class SplitType(Enum):
-    TRAIN = 0
-    VAL = 1
-    TEST = 2
+class SplitType(StrEnum):
+    TRAIN = "TRAIN"
+    VAL = "VAL"
+    TEST = "TEST"
+    NONE = None
 
 @dataclass
 class AudioMetadata:
