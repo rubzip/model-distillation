@@ -1,6 +1,6 @@
 import torch
 
-class ClassificationMetricsOptimal:
+class ClassificationMetrics:
     def __init__(self, num_classes: int):
         self.num_classes = num_classes
         self.reset()
