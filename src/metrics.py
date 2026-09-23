@@ -1,4 +1,16 @@
+from dataclasses import dataclass
 import torch
+
+@dataclass
+class Metrics:
+    accuracy: float
+    precision: float
+    recall: float
+    f1: float
+
+    def __str__(self):
+        return f"Acc: {self.accuracy} | Prec: {self.precision} | Recall: {self.recall} | F1: {self.f1}"
+
 
 class ClassificationMetrics:
     def __init__(self, num_classes: int):
@@ -16,7 +28,7 @@ class ClassificationMetrics:
         bincount = torch.bincount(indices, minlength=self.num_classes ** 2)
         self.conf_matrix += bincount.reshape((self.num_classes, self.num_classes)).cpu()
 
-    def compute(self) -> dict:
+    def compute(self) -> Metrics:
         tp = self.conf_matrix.diagonal()
         
         pred_counts = self.conf_matrix.sum(dim=0)
@@ -28,9 +40,21 @@ class ClassificationMetrics:
         p_plus_r = precision + recall
         f1 = torch.where(p_plus_r > 0, 2 * (precision * recall) / p_plus_r, 0.0)
         
-        return {
-            "accuracy": tp.sum().item() / self.conf_matrix.sum().item(),
-            "precision": precision.mean().item(),
-            "recall": recall.mean().item(),
-            "f1": f1.mean().item()
-        }
+        total_samples = self.conf_matrix.sum().item()
+        accuracy = tp.sum().item() / total_samples if total_samples > 0 else 0.0
+        
+        return Metrics(
+            accuracy=accuracy,
+            precision=precision.mean().item(),
+            recall=recall.mean().item(),
+            f1=f1.mean().item()
+        )
+
+    def get_cm(self, normalized: bool = True) -> torch.Tensor:
+        if not normalized:
+            return self.conf_matrix.clone()
+        
+        cm_float = self.conf_matrix.float()
+        row_sums = cm_float.sum(dim=1, keepdim=True)
+        cm_normalized = torch.where(row_sums > 0, cm_float / row_sums, 0.0)        
+        return cm_normalized
