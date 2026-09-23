@@ -47,6 +47,7 @@ class EarlyStopping:
         self.early_stop = False
         self.best_value = None
         self.best_model = None
+        self.best_epoch = 0
 
     def __call__(self, value: float, model: nn.Module):
         """Alias for the step method to allow the object to be called directly.
@@ -80,6 +81,7 @@ class EarlyStopping:
         self.best_value = value
         self.epochs_without_improvement = 0
         self._save_best_model(model)
+        self.best_epoch = self.epoch
 
     def restore_best_model(self, model: nn.Module) -> None:
         """Restores the model weights to the best recorded state.
