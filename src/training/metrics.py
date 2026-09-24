@@ -30,7 +30,6 @@ class ClassificationMetrics:
         self.reset()
 
     def reset(self):
-        # Matriz de confusión C x C
         self.conf_matrix = torch.zeros((self.num_classes, self.num_classes), dtype=torch.int64)
 
     @torch.no_grad()

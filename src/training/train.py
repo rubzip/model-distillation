@@ -1,23 +1,25 @@
 import torch
+
 from .early_stopping import EarlyStopping
 from .criterion import AbstractCriterion
-from .metrics import ClassificationMetrics, Metrics, History
+from .metrics import ClassificationMetrics, History
 from .model import Model
 
 def train(
-    model: Model, 
-    ea: EarlyStopping, 
-    max_epochs: int, 
-    train_loader: torch.utils.data.DataLoader, 
-    val_loader: torch.utils.data.DataLoader, 
-    optimizer: torch.optim.Optimizer, 
-    criterion: AbstractCriterion,         # Actualizado al tipo correcto
-    metrics: ClassificationMetrics,       # <-- Añadido como parámetro
+    model: Model,
+    ea: EarlyStopping,
+    max_epochs: int,
+    train_loader: torch.utils.data.DataLoader,
+    val_loader: torch.utils.data.DataLoader,
+    optimizer: torch.optim.Optimizer,
+    criterion: AbstractCriterion,
+    num_classes: int,
     device: torch.device = torch.device("cpu")
 ) -> History:
     """
     Standard training loop utilizing the EarlyStopping mechanism and metrics.
     """
+    metrics = ClassificationMetrics(num_classes=num_classes)
     model.to(device)
     history = History()
     
