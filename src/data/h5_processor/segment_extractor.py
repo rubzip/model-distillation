@@ -4,6 +4,7 @@ import torch
 import torchaudio
 import torchaudio.transforms as T
 import torch.nn.functional as F
+import soundfile as sf
 import numpy as np
 from pathlib import Path
 from dataclasses import asdict
@@ -33,19 +34,30 @@ class H5SegmentExtractor:
         self.segment_metadata_list: List[AudioSegmentMetadata] = []
         self._global_counter = 0
         self._audio_buffer: List[torch.Tensor] = []
+        self._resamplers: dict[int, T.Resample] = {}
 
     def _load_and_resample(self, filepath: Path | str) -> torch.Tensor:
-        """Carga el audio y lo remuestrea si es necesario usando PyTorch (GPU/CPU)"""
-        waveform, sr = torchaudio.load(filepath)
+        """Carga el audio y lo remuestrea si es necesario usando torchaudio o soundfile."""
+        try:
+            waveform, sr = torchaudio.load(filepath)
+        except Exception:
+            # Fallback a soundfile para máxima compatibilidad multiplataforma
+            data, sr = sf.read(filepath, dtype="float32")
+            waveform = torch.from_numpy(data)
+            if waveform.ndim == 1:
+                waveform = waveform.unsqueeze(0)
+            else:
+                waveform = waveform.t()
         
         # Convertir a mono si tiene múltiples canales (promediando)
         if waveform.shape[0] > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)
             
-        # Remuestrear
+        # Remuestrear con resampler en caché
         if sr != self.target_sr:
-            resampler = T.Resample(orig_freq=sr, new_freq=self.target_sr)
-            waveform = resampler(waveform)
+            if sr not in self._resamplers:
+                self._resamplers[sr] = T.Resample(orig_freq=sr, new_freq=self.target_sr)
+            waveform = self._resamplers[sr](waveform)
             
         return waveform
 
@@ -105,7 +117,7 @@ class H5SegmentExtractor:
                 # El ID es simplemente el índice de fila como string (ej. "0000005")
                 segment_id = f"{self._global_counter:07d}"
                 
-                # Crear metadato ligero
+                # Crear metadato ligero con timestamps calculados y provenance completa
                 segment_meta = AudioSegmentMetadata(
                     id=segment_id,
                     original_fname=base_meta.fname,
@@ -113,7 +125,10 @@ class H5SegmentExtractor:
                     end_step=end_step,
                     sr=self.target_sr,
                     split=base_meta.split,
-                    category=base_meta.category
+                    category=base_meta.category,
+                    subcategory=base_meta.subcategory,
+                    location_id=base_meta.location_id,
+                    device_id=base_meta.device_id,
                 )
                 
                 self.segment_metadata_list.append(segment_meta)
@@ -132,12 +147,13 @@ class H5SegmentExtractor:
         print(f"Iniciando extracción. HDF5: {self.output_h5_path}")
         
         with h5py.File(self.output_h5_path, 'w') as h5f:
-            # Crear dataset expansible para el audio
+            # Crear dataset expansible para el audio con chunks alineados al buffer
             dataset = h5f.create_dataset(
                 "audio_segments",
                 shape=(0, self.segment_steps),       # Dimensión inicial 0
                 maxshape=(None, self.segment_steps), # La primera dimensión puede crecer al infinito
                 dtype='float32',
+                chunks=(self.write_batch_size, self.segment_steps),
                 compression="lzf"                    # Compresión muy rápida
             )
             
@@ -149,6 +165,11 @@ class H5SegmentExtractor:
                     
             # Escribir los segmentos restantes que no llenaron el último buffer
             self._flush_buffer(dataset)
+
+            # Guardar atributos de configuración en el HDF5
+            h5f.attrs["target_sr"] = self.target_sr
+            h5f.attrs["segment_steps"] = self.segment_steps
+            h5f.attrs["total_segments"] = self._global_counter
 
         print(f"Guardando metadata maestra en {self.output_meta_path}...")
         self._save_master_metadata()

@@ -41,9 +41,21 @@ class AbstractH5BatchProcessor(ABC):
         """
         pass
 
+    def _get_input_dataset(self, h5_in: h5py.File) -> h5py.Dataset:
+        if self.input_dataset_name in h5_in:
+            return h5_in[self.input_dataset_name]
+        available = list(h5_in.keys())
+        if len(available) == 1:
+            print(f" -> Aviso: '{self.input_dataset_name}' no encontrado. Usando único dataset disponible: '{available[0]}'")
+            return h5_in[available[0]]
+        raise KeyError(
+            f"Dataset '{self.input_dataset_name}' no encontrado en {self.input_h5_path}. Disponibles: {available}"
+        )
+
     def _infer_shape(self, h5_in: h5py.File) -> tuple:
         """Pase de prueba genérico para descubrir las dimensiones de salida."""
-        dummy_np = h5_in[self.input_dataset_name][0:1] # Cargar 1 solo ejemplo
+        input_dataset = self._get_input_dataset(h5_in)
+        dummy_np = input_dataset[0:1] # Cargar 1 solo ejemplo
         dummy_tensor = torch.from_numpy(dummy_np).to(self.device)
         
         with torch.no_grad():
@@ -61,7 +73,7 @@ class AbstractH5BatchProcessor(ABC):
         with h5py.File(self.input_h5_path, 'r') as h5_in, \
              h5py.File(self.output_h5_path, 'w') as h5_out:
 
-            input_dataset = h5_in[self.input_dataset_name]
+            input_dataset = self._get_input_dataset(h5_in)
             total_items = input_dataset.shape[0]
 
             # Inferencia de forma y pre-asignación
@@ -69,12 +81,18 @@ class AbstractH5BatchProcessor(ABC):
             final_shape = (total_items,) + output_shape
             print(f" -> Forma detectada: {final_shape}")
 
+            # Configurar chunking optimizado para I/O y DataLoader
+            chunk_batch = min(self.batch_size, 128, max(total_items, 1))
+            chunks = (chunk_batch,) + output_shape
+
             output_dataset = h5_out.create_dataset(
                 self.output_dataset_name,
                 shape=final_shape,
                 dtype='float32',
-                compression="lzf"
+                compression="lzf",
+                chunks=chunks
             )
+            h5_out.attrs["total_items"] = total_items
 
             num_batches = math.ceil(total_items / self.batch_size)
 

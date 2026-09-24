@@ -1,13 +1,9 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-from enum import StrEnum
+from typing import Optional, Literal  
 
-class SplitType(StrEnum):
-    TRAIN = "TRAIN"
-    VAL = "VAL"
-    TEST = "TEST"
-    NONE = "NONE"
+
+SplitType = Literal["TRAIN", "VAL", "TEST", "NONE"]
 
 @dataclass
 class AudioMetadata:
@@ -28,9 +24,20 @@ class AudioMetadata:
 class AudioSegmentMetadata:
     id: str
     original_fname: Path | str
-    start_step: int
-    end_step: int
-    sr: int
+    start_step: int  # Sample index in resampled domain (at target sr)
+    end_step: int    # Sample index in resampled domain (at target sr)
+    sr: int          # Target sample rate of the segment
     
     split: SplitType
     category: str
+    subcategory: Optional[str] = None
+    location_id: Optional[str] = None
+    device_id: Optional[str] = None
+    start_time_sec: Optional[float] = None
+    end_time_sec: Optional[float] = None
+
+    def __post_init__(self):
+        if self.start_time_sec is None and self.sr > 0:
+            self.start_time_sec = round(self.start_step / self.sr, 6)
+        if self.end_time_sec is None and self.sr > 0:
+            self.end_time_sec = round(self.end_step / self.sr, 6)
