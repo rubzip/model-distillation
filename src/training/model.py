@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class Model(nn.Module):
     def __init__(self, embedding: nn.Module, classifier: nn.Module):
         super().__init__()

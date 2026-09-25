@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Optional, Set
+
 import h5py
 import torch
 from torch.utils.data import DataLoader
@@ -73,7 +74,8 @@ class DatasetValidator:
             raise ValueError("label_map is empty.")
 
         unmapped = {
-            m.category for m in self.dataset.metadata_list
+            m.category
+            for m in self.dataset.metadata_list
             if m.category not in self.dataset.label_map
         }
         if unmapped:
@@ -111,7 +113,9 @@ class DatasetValidator:
             raise ValueError(f"Inconsistent feature shapes detected across samples: {shapes_x}")
 
         if all_zeros:
-            raise ValueError("All inspected feature tensors contain only zeros (silent/dead features).")
+            raise ValueError(
+                "All inspected feature tensors contain only zeros (silent/dead features)."
+            )
 
     def check_dataloader(self, batch_size: int = 4) -> None:
         """Verify that PyTorch DataLoader can batch and collate samples without error."""
@@ -119,7 +123,7 @@ class DatasetValidator:
             self.dataset,
             batch_size=min(batch_size, len(self.dataset)),
             shuffle=False,
-            num_workers=0
+            num_workers=0,
         )
         try:
             next(iter(loader))
@@ -138,8 +142,7 @@ class DatasetValidator:
 
 
 def validate_dataset(
-    dataset: KnowledgeDistillationDataset,
-    num_samples: Optional[int] = 50
+    dataset: KnowledgeDistillationDataset, num_samples: Optional[int] = 50
 ) -> bool:
     """Convenience function to run all checks on a dataset."""
     validator = DatasetValidator(dataset)
@@ -172,7 +175,9 @@ def check_split_leakage(
 
         test_file_overlap = train_files.intersection(test_files)
         if test_file_overlap:
-            raise ValueError(f"Data leakage: train and test share original files: {test_file_overlap}")
+            raise ValueError(
+                f"Data leakage: train and test share original files: {test_file_overlap}"
+            )
 
         test_id_overlap = train_ids.intersection(test_ids)
         if test_id_overlap:

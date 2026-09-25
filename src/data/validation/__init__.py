@@ -1,7 +1,7 @@
 from .validate_dataset import (
     DatasetValidator,
-    validate_dataset,
     check_split_leakage,
+    validate_dataset,
 )
 
 __all__ = [

@@ -1,6 +1,8 @@
 import unittest
 from pathlib import Path
+
 from src.data.metadata import AudioMetadata, AudioSegmentMetadata
+
 
 class TestMetadata(unittest.TestCase):
     def test_audio_metadata_creation(self):
@@ -14,7 +16,7 @@ class TestMetadata(unittest.TestCase):
             location_id="loc_1",
             device_id="dev_a",
             split="TRAIN",
-            id="audio_001"
+            id="audio_001",
         )
         self.assertEqual(meta.category, "airport")
         self.assertEqual(meta.split, "TRAIN")
@@ -28,7 +30,7 @@ class TestMetadata(unittest.TestCase):
             end_step=32000,
             sr=16000,
             split="VAL",
-            category="park"
+            category="park",
         )
         self.assertEqual(seg.id, "0000010")
         self.assertEqual(seg.start_time_sec, 1.0)
@@ -45,10 +47,11 @@ class TestMetadata(unittest.TestCase):
             split="TEST",
             category="bus",
             start_time_sec=0.03125,
-            end_time_sec=0.09375
+            end_time_sec=0.09375,
         )
         self.assertEqual(seg.start_time_sec, 0.03125)
         self.assertEqual(seg.end_time_sec, 0.09375)
+
 
 if __name__ == "__main__":
     unittest.main()

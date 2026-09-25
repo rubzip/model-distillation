@@ -1,10 +1,11 @@
 import math
-import h5py
-import torch
-import numpy as np
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable, Union
+
+import h5py
+import torch
+
 
 class AbstractH5BatchProcessor(ABC):
     def __init__(
@@ -15,17 +16,17 @@ class AbstractH5BatchProcessor(ABC):
         input_dataset_name: str = "audio_segments",
         output_dataset_name: str = "data",
         batch_size: int = 512,
-        device: torch.device = torch.device("cpu")
+        device: torch.device = torch.device("cpu"),
     ):
         self.input_h5_path = Path(input_h5_path)
         self.output_h5_path = Path(output_h5_path)
-        
+
         # Si es un modelo de PyTorch, lo pasamos al device y lo ponemos en eval()
         if isinstance(processor, torch.nn.Module):
             self.processor = processor.to(device).eval()
         else:
             self.processor = processor
-            
+
         self.input_dataset_name = input_dataset_name
         self.output_dataset_name = output_dataset_name
         self.batch_size = batch_size
@@ -46,7 +47,9 @@ class AbstractH5BatchProcessor(ABC):
             return h5_in[self.input_dataset_name]
         available = list(h5_in.keys())
         if len(available) == 1:
-            print(f" -> Aviso: '{self.input_dataset_name}' no encontrado. Usando único dataset disponible: '{available[0]}'")
+            print(
+                f" -> Aviso: '{self.input_dataset_name}' no encontrado. Usando único dataset disponible: '{available[0]}'"
+            )
             return h5_in[available[0]]
         raise KeyError(
             f"Dataset '{self.input_dataset_name}' no encontrado en {self.input_h5_path}. Disponibles: {available}"
@@ -55,13 +58,13 @@ class AbstractH5BatchProcessor(ABC):
     def _infer_shape(self, h5_in: h5py.File) -> tuple:
         """Pase de prueba genérico para descubrir las dimensiones de salida."""
         input_dataset = self._get_input_dataset(h5_in)
-        dummy_np = input_dataset[0:1] # Cargar 1 solo ejemplo
+        dummy_np = input_dataset[0:1]  # Cargar 1 solo ejemplo
         dummy_tensor = torch.from_numpy(dummy_np).to(self.device)
-        
+
         with torch.no_grad():
             dummy_out = self._process_batch(dummy_tensor)
-            
-        return tuple(dummy_out.shape[1:]) # Ignorar la dimensión de batch (la 0)
+
+        return tuple(dummy_out.shape[1:])  # Ignorar la dimensión de batch (la 0)
 
     @torch.no_grad()
     def run(self) -> None:
@@ -69,10 +72,11 @@ class AbstractH5BatchProcessor(ABC):
         print(f"\n[{self.__class__.__name__}] Iniciando...")
         print(f" -> Input:  {self.input_h5_path}")
         print(f" -> Output: {self.output_h5_path}")
-        
-        with h5py.File(self.input_h5_path, 'r') as h5_in, \
-             h5py.File(self.output_h5_path, 'w') as h5_out:
 
+        with (
+            h5py.File(self.input_h5_path, "r") as h5_in,
+            h5py.File(self.output_h5_path, "w") as h5_out,
+        ):
             input_dataset = self._get_input_dataset(h5_in)
             total_items = input_dataset.shape[0]
 
@@ -88,9 +92,9 @@ class AbstractH5BatchProcessor(ABC):
             output_dataset = h5_out.create_dataset(
                 self.output_dataset_name,
                 shape=final_shape,
-                dtype='float32',
+                dtype="float32",
                 compression="lzf",
-                chunks=chunks
+                chunks=chunks,
             )
             h5_out.attrs["total_items"] = total_items
 
@@ -112,6 +116,9 @@ class AbstractH5BatchProcessor(ABC):
 
                 # Progreso
                 if (i + 1) % 10 == 0 or i == num_batches - 1:
-                    print(f"\r -> Batch {i+1}/{num_batches} ({(end_idx/total_items)*100:.1f}%)", end="")
-                    
+                    print(
+                        f"\r -> Batch {i + 1}/{num_batches} ({(end_idx / total_items) * 100:.1f}%)",
+                        end="",
+                    )
+
         print("\n -> ¡Proceso finalizado con éxito!")

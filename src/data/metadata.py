@@ -1,33 +1,34 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Literal  
-
+from typing import Literal, Optional
 
 SplitType = Literal["TRAIN", "VAL", "TEST", "NONE"]
+
 
 @dataclass
 class AudioMetadata:
     fname: Path
     category: str
     subcategory: str
-    
+
     steps: int
     sr: int
     channels: int
-    
+
     location_id: str
     device_id: str
     split: SplitType
     id: Optional[str] = None
+
 
 @dataclass
 class AudioSegmentMetadata:
     id: str
     original_fname: Path | str
     start_step: int  # Sample index in resampled domain (at target sr)
-    end_step: int    # Sample index in resampled domain (at target sr)
-    sr: int          # Target sample rate of the segment
-    
+    end_step: int  # Sample index in resampled domain (at target sr)
+    sr: int  # Target sample rate of the segment
+
     split: SplitType
     category: str
     subcategory: Optional[str] = None

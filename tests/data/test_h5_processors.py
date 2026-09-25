@@ -1,23 +1,24 @@
-import unittest
 import tempfile
+import unittest
 from pathlib import Path
+
+import h5py
 import numpy as np
 import soundfile as sf
 import torch
 import torch.nn as nn
-import h5py
 
-from src.data.metadata import AudioMetadata
 from src.data.h5_processor import (
-    H5SegmentExtractor,
-    H5FeatureProcessor,
     H5EmbeddingProcessor,
-    H5SizeReductionProcessor,
+    H5SegmentExtractor,
     PCAEmbeddingReducer,
 )
+from src.data.metadata import AudioMetadata
+
 
 class MockModel3D(nn.Module):
     """Model that outputs 3D tensor [Batch, 1, Embed_Dim] to test dimension preservation."""
+
     def __init__(self, embed_dim=16):
         super().__init__()
         self.embed_dim = embed_dim
@@ -30,6 +31,7 @@ class MockModel3D(nn.Module):
         sub = x[:, :100]
         out = self.fc(sub)
         return out.unsqueeze(1)  # Returns [B, 1, embed_dim]
+
 
 class TestH5Processors(unittest.TestCase):
     def setUp(self):
@@ -52,7 +54,7 @@ class TestH5Processors(unittest.TestCase):
             channels=1,
             location_id="loc_1",
             device_id="dev_a",
-            split="TRAIN"
+            split="TRAIN",
         )
 
     def tearDown(self):
@@ -67,7 +69,7 @@ class TestH5Processors(unittest.TestCase):
             output_meta_path=meta_out,
             target_sr=self.sr,
             segment_steps=16000,
-            write_batch_size=2
+            write_batch_size=2,
         )
         metas = extractor.run([self.meta])
         self.assertEqual(len(metas), 2)
@@ -92,7 +94,7 @@ class TestH5Processors(unittest.TestCase):
             input_h5_path=seg_h5,
             output_h5_path=out_h5,
             processor=model,
-            batch_size=1  # Batch size 1 tests that batch dim is not collapsed
+            batch_size=1,  # Batch size 1 tests that batch dim is not collapsed
         )
         processor.run()
 
@@ -132,6 +134,7 @@ class TestH5Processors(unittest.TestCase):
 
         loaded_transformed = loaded_reducer.transform(sample)
         self.assertTrue(torch.allclose(transformed, loaded_transformed))
+
 
 if __name__ == "__main__":
     unittest.main()

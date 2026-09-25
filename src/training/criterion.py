@@ -1,6 +1,8 @@
+from abc import ABC, abstractmethod
+
 import torch
 import torch.nn as nn
-from abc import ABC, abstractmethod
+
 
 class AbstractCriterion(nn.Module, ABC):
     def __init__(self):
@@ -8,16 +10,13 @@ class AbstractCriterion(nn.Module, ABC):
 
     @abstractmethod
     def forward(
-        self, 
-        e_true: torch.Tensor, 
-        e_pred: torch.Tensor, 
-        y_true: torch.Tensor, 
-        y_pred: torch.Tensor
+        self, e_true: torch.Tensor, e_pred: torch.Tensor, y_true: torch.Tensor, y_pred: torch.Tensor
     ) -> torch.Tensor:
         pass
 
+
 class DistillationCriterion(AbstractCriterion):
-    def __init__(self, lambda_e: float, lambda_y: float, loss_e_fn = None, loss_y_fn = None):
+    def __init__(self, lambda_e: float, lambda_y: float, loss_e_fn=None, loss_y_fn=None):
         super().__init__()
         self.lambda_e = lambda_e
         self.lambda_y = lambda_y

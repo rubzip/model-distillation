@@ -1,6 +1,6 @@
-from .early_stopping import EarlyStopping
 from .criterion import AbstractCriterion, DistillationCriterion
-from .metrics import Metrics, History, ClassificationMetrics
+from .early_stopping import EarlyStopping
+from .metrics import ClassificationMetrics, History, Metrics
 from .model import Model
 from .train import train
 

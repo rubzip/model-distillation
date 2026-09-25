@@ -1,22 +1,24 @@
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
+
 import h5py
 import torch
 from torch.utils.data import Dataset
 
 from .metadata import AudioSegmentMetadata
 
+
 class KnowledgeDistillationDataset(Dataset):
     def __init__(
-        self, 
-        metadata_list: List[AudioSegmentMetadata], 
-        features_h5_path: Path | str, 
+        self,
+        metadata_list: List[AudioSegmentMetadata],
+        features_h5_path: Path | str,
         label_map: Dict[str, int],
-        embeddings_h5_path: Optional[Path | str] = None, 
+        embeddings_h5_path: Optional[Path | str] = None,
         features_dataset_name: str = "data",
         embeddings_dataset_name: str = "data",
         indices: Optional[List[int]] = None,
-        transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None
+        transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
     ):
         """
         Dataset que une características de audio, embeddings precomputados y metadatos.
@@ -35,9 +37,11 @@ class KnowledgeDistillationDataset(Dataset):
         """
         self.metadata_list = metadata_list
         self.features_h5_path = Path(features_h5_path)
-        self.embeddings_h5_path = Path(embeddings_h5_path) if embeddings_h5_path is not None else None
+        self.embeddings_h5_path = (
+            Path(embeddings_h5_path) if embeddings_h5_path is not None else None
+        )
         self.label_map = label_map
-        
+
         self.features_dataset_name = features_dataset_name
         self.embeddings_dataset_name = embeddings_dataset_name
         self.transform = transform
@@ -45,7 +49,9 @@ class KnowledgeDistillationDataset(Dataset):
         # Precalcular el mapeo de índice local -> índice de fila HDF5
         if indices is not None:
             if len(indices) != len(metadata_list):
-                raise ValueError(f"Longitud de indices ({len(indices)}) no coincide con metadata_list ({len(metadata_list)})")
+                raise ValueError(
+                    f"Longitud de indices ({len(indices)}) no coincide con metadata_list ({len(metadata_list)})"
+                )
             self._h5_indices = list(indices)
         else:
             self._h5_indices = []
@@ -65,9 +71,9 @@ class KnowledgeDistillationDataset(Dataset):
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         # Apertura perezosa de los archivos HDF5
         if self.h5_features is None:
-            self.h5_features = h5py.File(self.features_h5_path, 'r', swmr=True)
+            self.h5_features = h5py.File(self.features_h5_path, "r", swmr=True)
         if self.h5_embeddings is None and self.embeddings_h5_path is not None:
-            self.h5_embeddings = h5py.File(self.embeddings_h5_path, 'r', swmr=True)
+            self.h5_embeddings = h5py.File(self.embeddings_h5_path, "r", swmr=True)
 
         h5_row = self._h5_indices[idx]
 

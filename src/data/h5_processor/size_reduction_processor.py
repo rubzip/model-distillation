@@ -1,12 +1,14 @@
-import joblib
-import numpy as np
-import torch
-from torch.utils.data import DataLoader
-from sklearn.decomposition import IncrementalPCA
 from pathlib import Path
 from typing import Union
 
+import joblib
+import numpy as np
+import torch
+from sklearn.decomposition import IncrementalPCA
+from torch.utils.data import DataLoader
+
 from .base_processor import AbstractH5BatchProcessor
+
 
 class PCAEmbeddingReducer:
     def __init__(self, target_dim: int = 32):
@@ -14,14 +16,14 @@ class PCAEmbeddingReducer:
         self.pca = IncrementalPCA(n_components=target_dim)
         self.is_fitted = False
 
-    def fit(self, train_loader: DataLoader, embedding_index: int = 0) -> None:        
+    def fit(self, train_loader: DataLoader, embedding_index: int = 0) -> None:
         print(f"Ajustando PCA (Target Dim: {self.target_dim})...")
         buffer = []
         fitted_batches = 0
 
         for batch in train_loader:
             if isinstance(batch, (tuple, list)):
-                embeddings = batch[embedding_index]            
+                embeddings = batch[embedding_index]
             else:
                 embeddings = batch
 
@@ -29,7 +31,9 @@ class PCAEmbeddingReducer:
                 embeddings = embeddings.detach().cpu().numpy()
 
             if embeddings.ndim != 2:
-                raise ValueError(f"Se esperaba array 2D [Batch, Dim], pero se recibió forma {embeddings.shape}")
+                raise ValueError(
+                    f"Se esperaba array 2D [Batch, Dim], pero se recibió forma {embeddings.shape}"
+                )
 
             buffer.append(embeddings)
             total_buffered = sum(b.shape[0] for b in buffer)
@@ -54,12 +58,14 @@ class PCAEmbeddingReducer:
                     f"pero solo se encontraron {total_buffered}."
                 )
             else:
-                print(f"Aviso: Se omitieron {total_buffered} muestras residuales finales (menor a target_dim={self.target_dim}).")
-            
+                print(
+                    f"Aviso: Se omitieron {total_buffered} muestras residuales finales (menor a target_dim={self.target_dim})."
+                )
+
         self.is_fitted = True
         print(f"PCA Ajustado. Varianza retenida: {sum(self.get_retained_variance()):.4f}")
 
-    def get_retained_variance(self) -> np.ndarray:            
+    def get_retained_variance(self) -> np.ndarray:
         if not self.is_fitted:
             raise ValueError("El PCA no está entrenado.")
         return self.pca.explained_variance_ratio_
@@ -70,7 +76,9 @@ class PCAEmbeddingReducer:
             raise ValueError("No se puede guardar un PCA que no está ajustado.")
         filepath = Path(filepath)
         filepath.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump({"pca": self.pca, "target_dim": self.target_dim, "is_fitted": self.is_fitted}, filepath)
+        joblib.dump(
+            {"pca": self.pca, "target_dim": self.target_dim, "is_fitted": self.is_fitted}, filepath
+        )
         print(f"PCA guardado en {filepath}")
 
     def load(self, filepath: Union[Path, str]) -> None:
@@ -94,19 +102,20 @@ class PCAEmbeddingReducer:
     def transform(self, e: Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
         if not self.is_fitted:
             raise ValueError("El PCA no está entrenado. Llama a fit() o load() primero.")
-            
+
         is_tensor = isinstance(e, torch.Tensor)
         device = e.device if is_tensor else None
-        
+
         # Convertir a numpy para sklearn
         e_np = e.detach().cpu().numpy() if is_tensor else e
-            
+
         reduced_np = self.pca.transform(e_np)
-        
+
         # Devolver en el mismo formato que entró
         if is_tensor:
             return torch.from_numpy(reduced_np).to(device)
         return reduced_np
+
 
 class H5SizeReductionProcessor(AbstractH5BatchProcessor):
     def __init__(
@@ -117,20 +126,22 @@ class H5SizeReductionProcessor(AbstractH5BatchProcessor):
         input_dataset_name: str = "data",
         output_dataset_name: str = "data",
         batch_size: int = 1024,
-        device: torch.device = torch.device("cpu")
+        device: torch.device = torch.device("cpu"),
     ):
         # Validación temprana: Protegemos el pipeline asegurando que el modelo esté listo
         if not reducer.is_fitted:
-            raise ValueError("El reductor debe estar entrenado (is_fitted=True) antes de procesar el HDF5.")
+            raise ValueError(
+                "El reductor debe estar entrenado (is_fitted=True) antes de procesar el HDF5."
+            )
 
         super().__init__(
             input_h5_path=input_h5_path,
             output_h5_path=output_h5_path,
-            processor=reducer, 
+            processor=reducer,
             input_dataset_name=input_dataset_name,
             output_dataset_name=output_dataset_name,
             batch_size=batch_size,
-            device=device
+            device=device,
         )
 
     def _process_batch(self, batch_tensor: torch.Tensor) -> torch.Tensor:
@@ -140,9 +151,9 @@ class H5SizeReductionProcessor(AbstractH5BatchProcessor):
                 f"El reductor PCA espera tensores 2D [Batch, Embedding_Dim], "
                 f"pero recibió un tensor {batch_tensor.dim()}D."
             )
-            
+
         # Como nuestro reductor ahora maneja tensores nativamente en su método transform(),
         # la delegación es directa y limpia.
         reduced_tensor = self.processor.transform(batch_tensor)
-        
+
         return reduced_tensor
