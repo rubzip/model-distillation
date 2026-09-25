@@ -8,6 +8,11 @@ from .h5_processor import (
     H5SizeReductionProcessor,
     PCAEmbeddingReducer,
 )
+from .validation import (
+    DatasetValidator,
+    validate_dataset,
+    check_split_leakage,
+)
 
 __all__ = [
     "AudioMetadata",
@@ -20,4 +25,7 @@ __all__ = [
     "H5EmbeddingProcessor",
     "H5SizeReductionProcessor",
     "PCAEmbeddingReducer",
+    "DatasetValidator",
+    "validate_dataset",
+    "check_split_leakage",
 ]
