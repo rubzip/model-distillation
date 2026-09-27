@@ -184,3 +184,10 @@ class H5SegmentExtractor:
 
         print(f"¡Éxito! Se generaron {self._global_counter} segmentos perfectos.")
         return self.segment_metadata_list
+
+    def set_output(self, output_h5_path: Path | str, output_meta_path: Path | str) -> None:
+        self.output_h5_path = Path(output_h5_path)
+        self.output_meta_path = Path(output_meta_path)
+
+        self.output_h5_path.parent.mkdir(parents=True, exist_ok=True)
+        self.output_meta_path.parent.mkdir(parents=True, exist_ok=True)

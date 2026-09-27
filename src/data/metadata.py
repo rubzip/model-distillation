@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Optional
@@ -19,6 +20,12 @@ class AudioMetadata:
     device_id: str
     split: SplitType
     id: Optional[str] = None
+
+
+def load_metadata(fname: Path) -> list[AudioMetadata]:
+    with open(fname, "r") as f:
+        metadata_list = json.load(f)
+    return [AudioMetadata(**item) for item in metadata_list]
 
 
 @dataclass

@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 
 
-class Model(nn.Module):
-    def __init__(self, embedding: nn.Module, classifier: nn.Module):
+class DistillationModel(nn.Module):
+    def __init__(self, embedding_model: nn.Module, classifier_model: nn.Module):
         super().__init__()
-        self.embedding = embedding
-        self.classifier = classifier
+        self.embedding = embedding_model
+        self.classifier = classifier_model
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         e = self.embedding(x)

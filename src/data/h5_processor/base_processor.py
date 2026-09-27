@@ -6,13 +6,15 @@ from typing import Callable, Union
 import h5py
 import torch
 
+from src.processing.base import BaseProcessing
+
 
 class AbstractH5BatchProcessor(ABC):
     def __init__(
         self,
         input_h5_path: Union[Path, str],
         output_h5_path: Union[Path, str],
-        processor: Union[Callable, torch.nn.Module],
+        processor: BaseProcessing,
         input_dataset_name: str = "audio_segments",
         output_dataset_name: str = "data",
         batch_size: int = 512,
@@ -21,11 +23,7 @@ class AbstractH5BatchProcessor(ABC):
         self.input_h5_path = Path(input_h5_path)
         self.output_h5_path = Path(output_h5_path)
 
-        # Si es un modelo de PyTorch, lo pasamos al device y lo ponemos en eval()
-        if isinstance(processor, torch.nn.Module):
-            self.processor = processor.to(device).eval()
-        else:
-            self.processor = processor
+        self.processor = processor.to(device).eval() # .eval() ??
 
         self.input_dataset_name = input_dataset_name
         self.output_dataset_name = output_dataset_name

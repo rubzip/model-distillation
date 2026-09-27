@@ -1,8 +1,9 @@
+from ..models import DistillationModel
 from .criterion import AbstractCriterion, DistillationCriterion
 from .early_stopping import EarlyStopping
+from .evaluation import evaluate_distillation_model
 from .metrics import ClassificationMetrics, History, Metrics
-from .model import Model
-from .train import train
+from .train import train_distillation_model
 
 __all__ = [
     "EarlyStopping",
@@ -11,6 +12,7 @@ __all__ = [
     "Metrics",
     "History",
     "ClassificationMetrics",
-    "Model",
-    "train",
+    "DistillationModel",
+    "train_distillation_model",
+    "evaluate_distillation_model",
 ]

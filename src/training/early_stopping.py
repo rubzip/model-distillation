@@ -120,12 +120,10 @@ class EarlyStopping:
             )
             return
 
-        adjusted_value = value - self.min_delta
-        model_improved = (
-            adjusted_value >= self.best_value
-            if self.higher_is_better
-            else adjusted_value <= self.best_value
-        )
+        if self.higher_is_better:
+            model_improved = value >= (self.best_value + self.min_delta)
+        else:
+            model_improved = value <= (self.best_value - self.min_delta)
 
         if model_improved:
             self._improvement_achieved(value, model)

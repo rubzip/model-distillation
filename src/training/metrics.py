@@ -21,11 +21,22 @@ class History:
         self.val_losses: list[float] = []
         self.results: list[Metrics] = []
 
-    def add(self, train_loss: float, val_loss: float, result: Metrics):
+    def add(self, train_loss: float, val_loss: float, result: Metrics) -> None:
         self.n_epochs += 1
         self.train_losses.append(train_loss)
         self.val_losses.append(val_loss)
         self.results.append(result)
+
+    def to_dict(self) -> dict[str, list[float]]:
+        return {
+            "epoch": [float(i) for i in range(1, self.n_epochs + 1)],
+            "train_loss": list(self.train_losses),
+            "val_loss": list(self.val_losses),
+            "accuracy": [r.accuracy for r in self.results],
+            "precision": [r.precision for r in self.results],
+            "recall": [r.recall for r in self.results],
+            "f1": [r.f1 for r in self.results],
+        }
 
 
 class ClassificationMetrics:
