@@ -1,34 +1,30 @@
-from src.processing.base import BaseProcessing
+from src.processing.feature_extraction.mel import MelProcessor
+from src.processing.embedding.vggish import VGGishProcessor
+from src.processing.size_reduction.pca import PCAEmbeddingReducer
 
-SAMPLING_RATE = 16000
-SEGMENT_STEPS = 16000
 
-TRAIN_RAW_METADATA_PATH = "data/raw/train_metadata.json"
-VAL_RAW_METADATA_PATH = "data/raw/val_metadata.json"
-TEST_RAW_METADATA_PATH = "data/raw/test_metadata.json"
+# ==========================================
+# 2. AUDIO & PROCESSING HYPERPARAMETERS
+# ==========================================
 
-TRAIN_SEGMENTED_PATH = "data/processed/train_segments.h5"
-VAL_SEGMENTED_PATH = "data/processed/val_segments.h5"
-TEST_SEGMENTED_PATH = "data/processed/test_segments.h5"
+SAMPLING_RATE: int = 16000
+SEGMENT_STEPS: int = 16000
 
-TRAIN_SEGMENTED_METADATA_PATH = "data/processed/train_segments_metadata.json"
-VAL_SEGMENTED_METADATA_PATH = "data/processed/val_segments_metadata.json"
-TEST_SEGMENTED_METADATA_PATH = "data/processed/test_segments_metadata.json"
+N_MELS: int = 128
+TARGET_SR: int = SAMPLING_RATE
+N_FFT: int = 400
+HOP_LENGTH: int = 160
 
-TRAIN_FEATURES_PATH = "data/processed/train_features.h5"
-VAL_FEATURES_PATH = "data/processed/val_features.h5"
-TEST_FEATURES_PATH = "data/processed/test_features.h5"
+EMBEDING_DIM = 128
+SIZE_REDUCTION_DIM = 32
 
-TRAIN_RAW_EMBEDDINGS_PATH = "data/processed/train_raw_embeddings.h5"
-VAL_RAW_EMBEDDINGS_PATH = "data/processed/val_raw_embeddings.h5"
-TEST_RAW_EMBEDDINGS_PATH = "data/processed/test_raw_embeddings.h5"
+MEL_PROCESSOR = MelProcessor(N_MELS, TARGET_SR, N_FFT, HOP_LENGTH)
+EMBEDDING_PROCESSOR = VGGishProcessor(target_dim=EMBEDING_DIM)
+SIZE_REDUCTION_PROCESSOR = PCAEmbeddingReducer(target_dim=SIZE_REDUCTION_DIM)
 
-TRAIN_EMBEDDINGS_PATH = "data/processed/train_embeddings.h5"
-VAL_EMBEDDINGS_PATH = "data/processed/val_embeddings.h5"
-TEST_EMBEDDINGS_PATH = "data/processed/test_embeddings.h5"
-
-EMBEDDING_CLS: BaseProcessing = ...
-SIZE_REDUCTION_CLS: BaseProcessing = ...
+# ==========================================
+# 3. DATASET CLASSES
+# ==========================================
 
 CLASSES = ("class1", "class2", "class3")
 CLASS_DICT = {cls: idx for idx, cls in enumerate(CLASSES)}
