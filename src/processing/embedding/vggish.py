@@ -10,7 +10,7 @@ class VGGishProcessor(BaseProcessing):
 
     def process(self, data: torch.Tensor) -> torch.Tensor:
         # Stub implementation
-        return torch.zeros((data.size(0), self.target_dim), device=data.device)
+        return torch.randn((data.size(0), self.target_dim), device=data.device)
 
     def to(self, device: torch.device) -> 'VGGishProcessor':
         return self
