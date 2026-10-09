@@ -69,7 +69,7 @@ class TestValidation(unittest.TestCase):
             category="beach",  # Not in label_map
         )
         with self.assertRaises(KeyError):
-            dataset = KnowledgeDistillationDataset(
+            _ = KnowledgeDistillationDataset(
                 metadata_list=invalid_metas,
                 features_h5_path=self.features_h5,
                 embeddings_h5_path=self.embeddings_h5,

@@ -6,29 +6,11 @@ from pathlib import Path
 # Fix python path for script execution
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from dataclasses import dataclass
-from typing import Literal, Optional
-
 import numpy as np
 import soundfile as sf
+from src.data.metadata import AudioMetadata
 
-SplitType = Literal["TRAIN", "VAL", "TEST", "NONE"]
-
-@dataclass
-class AudioMetadata:
-    fname: Path
-    category: str
-    subcategory: str
-    steps: int
-    sr: int
-    channels: int
-    location_id: str
-    device_id: str
-    split: SplitType
-    id: Optional[str] = None
-
-from config import LABELS as CLASSES
-from config import MOCK_PATHS
+from config import LABELS, MOCK_PATHS
 
 SAMPLING_RATES = [16000, 22050, 44100]
 LENGTHS_IN_SECONDS = [1.5, 3.0, 5.0]
@@ -49,7 +31,7 @@ def generate_mock_audio(meta: AudioMetadata):
 
 def get_mock_metadata(i: int, base_path: Path, split: str) -> AudioMetadata:
     fname = base_path / split.lower() / f"audio_{i:04d}.wav"
-    category = np.random.choice(CLASSES)
+    category = np.random.choice(LABELS)
     subcategory = f"{category}_sub"
     length = np.random.choice(LENGTHS_IN_SECONDS)
     sr = int(np.random.choice(SAMPLING_RATES))
