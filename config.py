@@ -1,7 +1,9 @@
 from pathlib import Path
+
 from src.processing.embedding.vggish import VGGishProcessor
 from src.processing.feature_extraction.mel import MelProcessor
 from src.processing.size_reduction.pca import PCAEmbeddingReducer
+
 BASE_DIR = Path(__file__).parent / "data"
 BASE_DIR_MOCK_DATA = Path(__file__).parent / "mock_data"
 

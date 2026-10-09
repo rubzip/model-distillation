@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import torch
 
-from config import EMBEDDING_PROCESSOR, MEL_PROCESSOR, SIZE_REDUCTION_PROCESSOR, MOCK_PATHS
+from config import EMBEDDING_PROCESSOR, MEL_PROCESSOR, MOCK_PATHS, SIZE_REDUCTION_PROCESSOR
 from src.data.h5_processor import (
     H5EmbeddingProcessor,
     H5FeatureProcessor,

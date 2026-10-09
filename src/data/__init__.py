@@ -6,8 +6,8 @@ from .h5_processor import (
     H5SegmentExtractor,
     H5SizeReductionProcessor,
 )
-from .metadata import AudioMetadata, AudioSegmentMetadata, SplitType
 from .load_dataset import load_dataset
+from .metadata import AudioMetadata, AudioSegmentMetadata, SplitType
 from .split_paths import SplitPaths
 from .validation import (
     DatasetValidator,

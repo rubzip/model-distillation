@@ -2,6 +2,7 @@ import torch
 
 from src.processing.base import BaseProcessing
 
+
 class VGGishProcessor(BaseProcessing):
     def __init__(self, target_dim: int = 128):
         super().__init__({})

@@ -12,8 +12,8 @@ from src.data.h5_processor import (
     H5EmbeddingProcessor,
     H5SegmentExtractor,
 )
-from src.processing.size_reduction.pca import PCAEmbeddingReducer
 from src.data.metadata import AudioMetadata
+from src.processing.size_reduction.pca import PCAEmbeddingReducer
 
 
 class MockModel3D(nn.Module):

@@ -1,5 +1,6 @@
+from config import MOCK_PATHS, PATHS, SPLITS
 from src.data import load_dataset, validate_dataset
-from config import PATHS, MOCK_PATHS, SPLITS
+
 
 def load_and_validate_dataset(paths):
     dataset = load_dataset(paths)

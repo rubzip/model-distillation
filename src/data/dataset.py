@@ -50,7 +50,7 @@ class KnowledgeDistillationDataset(Dataset):
 
         # Extract labels into a lightweight tensor and discard the heavy list
         self.labels = torch.tensor(
-            [label_map[meta.category] for meta in metadata_list], 
+            [label_map[meta.category] for meta in metadata_list],
             dtype=torch.long
         )
 

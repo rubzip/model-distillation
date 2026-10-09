@@ -1,15 +1,16 @@
 import json
-import uuid
 import sys
+import uuid
 from pathlib import Path
 
 # Fix python path for script execution
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import numpy as np
-import soundfile as sf
 from dataclasses import dataclass
 from typing import Literal, Optional
+
+import numpy as np
+import soundfile as sf
 
 SplitType = Literal["TRAIN", "VAL", "TEST", "NONE"]
 
@@ -26,7 +27,9 @@ class AudioMetadata:
     split: SplitType
     id: Optional[str] = None
 
-from config import LABELS as CLASSES, MOCK_PATHS
+from config import LABELS as CLASSES
+from config import MOCK_PATHS
+
 SAMPLING_RATES = [16000, 22050, 44100]
 LENGTHS_IN_SECONDS = [1.5, 3.0, 5.0]
 NUM_CHANNELS = [1, 2]
@@ -36,10 +39,10 @@ def generate_mock_audio(meta: AudioMetadata):
     t = np.linspace(0, meta.steps / meta.sr, meta.steps, endpoint=False)
     # Generate a simple 440 Hz sine wave
     audio = 0.5 * np.sin(2 * np.pi * 440 * t)
-    
+
     if meta.channels == 2:
         audio = np.stack([audio, audio], axis=-1)
-        
+
     meta.fname.parent.mkdir(parents=True, exist_ok=True)
     sf.write(str(meta.fname), audio.astype(np.float32), meta.sr)
 
@@ -75,25 +78,25 @@ def generate_dataset(num_train=50, num_val=10, num_test=10):
         "val": num_val,
         "test": num_test,
     }
-    
+
     for split_name, count in splits_config.items():
         print(f"Generating {count} samples for {split_name} split...")
         paths = MOCK_PATHS[split_name]
-        
+
         metadata_list = []
         for i in range(count):
             meta = get_mock_metadata(i, paths.base_dir / "raw", split_name)
             generate_mock_audio(meta)
-            
+
             # Serialize for JSON
             meta_dict = meta.__dict__.copy()
             meta_dict["fname"] = str(meta.fname)
             metadata_list.append(meta_dict)
-            
+
         paths.raw_metadata.parent.mkdir(parents=True, exist_ok=True)
         with open(paths.raw_metadata, "w") as f:
             json.dump(metadata_list, f, indent=4)
-        
+
         print(f" -> Saved {paths.raw_metadata}")
 
 if __name__ == "__main__":

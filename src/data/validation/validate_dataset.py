@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import Optional, Set
+from typing import List, Optional, Set
 
 import h5py
 import torch
 from torch.utils.data import DataLoader
 
 from ..dataset import KnowledgeDistillationDataset
+from ..metadata import AudioSegmentMetadata
 
 
 class DatasetValidator:
@@ -138,9 +139,6 @@ def validate_dataset(
     validator = DatasetValidator(dataset)
     return validator.validate(num_samples=num_samples)
 
-
-from src.data.metadata import AudioSegmentMetadata
-from typing import List
 
 def check_split_leakage(
     train_metadata: List[AudioSegmentMetadata],
