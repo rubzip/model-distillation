@@ -69,17 +69,8 @@ class DatasetValidator:
                     )
 
     def check_labels(self) -> None:
-        """Verify that label map is valid and all categories in metadata exist in it."""
-        if not self.dataset.label_map:
-            raise ValueError("label_map is empty.")
-
-        unmapped = {
-            m.category
-            for m in self.dataset.metadata_list
-            if m.category not in self.dataset.label_map
-        }
-        if unmapped:
-            raise KeyError(f"Categories found in metadata but missing from label_map: {unmapped}")
+        """Verify that label map is valid (handled by Dataset __init__ now)."""
+        pass
 
     def check_samples(self, num_samples: Optional[int] = 50) -> None:
         """Probe samples for numerical validity (no NaNs, Infs, or all-zero features)."""
@@ -135,7 +126,6 @@ class DatasetValidator:
         self.check_files()
         self.check_h5_datasets()
         self.check_indices()
-        self.check_labels()
         self.check_samples(num_samples=num_samples)
         self.check_dataloader()
         return True
@@ -149,17 +139,20 @@ def validate_dataset(
     return validator.validate(num_samples=num_samples)
 
 
+from src.data.metadata import AudioSegmentMetadata
+from typing import List
+
 def check_split_leakage(
-    train_dataset: KnowledgeDistillationDataset,
-    val_dataset: KnowledgeDistillationDataset,
-    test_dataset: Optional[KnowledgeDistillationDataset] = None,
+    train_metadata: List[AudioSegmentMetadata],
+    val_metadata: List[AudioSegmentMetadata],
+    test_metadata: Optional[List[AudioSegmentMetadata]] = None,
 ) -> None:
     """Check for data leakage (shared original filenames or segment IDs) between splits."""
-    train_files = {str(m.original_fname) for m in train_dataset.metadata_list if m.original_fname}
-    val_files = {str(m.original_fname) for m in val_dataset.metadata_list if m.original_fname}
+    train_files = {str(m.original_fname) for m in train_metadata if m.original_fname}
+    val_files = {str(m.original_fname) for m in val_metadata if m.original_fname}
 
-    train_ids = {m.id for m in train_dataset.metadata_list}
-    val_ids = {m.id for m in val_dataset.metadata_list}
+    train_ids = {m.id for m in train_metadata}
+    val_ids = {m.id for m in val_metadata}
 
     file_overlap = train_files.intersection(val_files)
     if file_overlap:
@@ -169,9 +162,9 @@ def check_split_leakage(
     if id_overlap:
         raise ValueError(f"Data leakage: train and val share segment IDs: {id_overlap}")
 
-    if test_dataset is not None:
-        test_files = {str(m.original_fname) for m in test_dataset.metadata_list if m.original_fname}
-        test_ids = {m.id for m in test_dataset.metadata_list}
+    if test_metadata is not None:
+        test_files = {str(m.original_fname) for m in test_metadata if m.original_fname}
+        test_ids = {m.id for m in test_metadata}
 
         test_file_overlap = train_files.intersection(test_files)
         if test_file_overlap:

@@ -2,7 +2,7 @@ from .base_processor import AbstractH5BatchProcessor
 from .embedding_processor import H5EmbeddingProcessor
 from .feature_processor import H5FeatureProcessor
 from .segment_extractor import H5SegmentExtractor
-from .size_reduction_processor import H5SizeReductionProcessor, PCAEmbeddingReducer
+from .size_reduction_processor import H5SizeReductionProcessor
 
 __all__ = [
     "AbstractH5BatchProcessor",
@@ -10,5 +10,4 @@ __all__ = [
     "H5FeatureProcessor",
     "H5EmbeddingProcessor",
     "H5SizeReductionProcessor",
-    "PCAEmbeddingReducer",
 ]

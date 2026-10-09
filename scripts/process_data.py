@@ -1,7 +1,12 @@
+import sys
+from pathlib import Path
+
+# Fix python path for script execution
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import torch
 
-from scripts.config import EMBEDDING_PROCESSOR, MEL_PROCESSOR, SIZE_REDUCTION_PROCESSOR
-from scripts.split_paths import PATHS
+from config import EMBEDDING_PROCESSOR, MEL_PROCESSOR, SIZE_REDUCTION_PROCESSOR, MOCK_PATHS
 from src.data.h5_processor import (
     H5EmbeddingProcessor,
     H5FeatureProcessor,
@@ -11,6 +16,7 @@ from src.data.h5_processor import (
 from src.data.metadata import load_metadata
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+PATHS = MOCK_PATHS
 
 def run_pipeline():
     extract_segments()

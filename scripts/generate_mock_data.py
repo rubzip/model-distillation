@@ -1,11 +1,13 @@
 import json
 import uuid
+import sys
 from pathlib import Path
+
+# Fix python path for script execution
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 import soundfile as sf
-
-from split_paths import PATHS
 from dataclasses import dataclass
 from typing import Literal, Optional
 
@@ -24,7 +26,7 @@ class AudioMetadata:
     split: SplitType
     id: Optional[str] = None
 
-CLASSES = ("class1", "class2", "class3")
+from config import LABELS as CLASSES, MOCK_PATHS
 SAMPLING_RATES = [16000, 22050, 44100]
 LENGTHS_IN_SECONDS = [1.5, 3.0, 5.0]
 NUM_CHANNELS = [1, 2]
@@ -76,12 +78,11 @@ def generate_dataset(num_train=50, num_val=10, num_test=10):
     
     for split_name, count in splits_config.items():
         print(f"Generating {count} samples for {split_name} split...")
-        paths = PATHS[split_name]
+        paths = MOCK_PATHS[split_name]
         
         metadata_list = []
-        root_path = Path(__file__).parent.parent
         for i in range(count):
-            meta = get_mock_metadata(i, root_path / "data" / "raw", split_name)
+            meta = get_mock_metadata(i, paths.base_dir / "raw", split_name)
             generate_mock_audio(meta)
             
             # Serialize for JSON

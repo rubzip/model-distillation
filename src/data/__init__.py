@@ -5,9 +5,10 @@ from .h5_processor import (
     H5FeatureProcessor,
     H5SegmentExtractor,
     H5SizeReductionProcessor,
-    PCAEmbeddingReducer,
 )
 from .metadata import AudioMetadata, AudioSegmentMetadata, SplitType
+from .load_dataset import load_dataset
+from .split_paths import SplitPaths
 from .validation import (
     DatasetValidator,
     check_split_leakage,
@@ -24,8 +25,9 @@ __all__ = [
     "H5FeatureProcessor",
     "H5EmbeddingProcessor",
     "H5SizeReductionProcessor",
-    "PCAEmbeddingReducer",
     "DatasetValidator",
     "validate_dataset",
     "check_split_leakage",
+    "load_dataset",
+    "SplitPaths",
 ]

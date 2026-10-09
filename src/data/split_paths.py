@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parent.parent / "data"
+
 @dataclass
 class SplitPaths:
     """Generates all necessary file paths dynamically based on the split name."""
     split_name: str
-    base_dir: Path = Path(BASE_DIR)
+    base_dir: Path
 
     @property
     def raw_metadata(self) -> Path:
@@ -31,9 +31,3 @@ class SplitPaths:
     @property
     def embeddings(self) -> Path:
         return self.base_dir / f"processed/{self.split_name}_embeddings.h5"
-
-PATHS: dict[str, SplitPaths] = {
-    "train": SplitPaths("train"),
-    "val": SplitPaths("val"),
-    "test": SplitPaths("test"),
-}

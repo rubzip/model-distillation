@@ -35,16 +35,24 @@ class KnowledgeDistillationDataset(Dataset):
                      Si no se proporciona, se infiere automáticamente a partir de int(meta.id).
             transform: Función de transformación/aumento de datos opcional aplicada a 'x'.
         """
-        self.metadata_list = metadata_list
+        # Apertura perezosa por proceso/worker para compatibilidad con DataLoader
+        self.h5_features = None
+        self.h5_embeddings = None
+
         self.features_h5_path = Path(features_h5_path)
         self.embeddings_h5_path = (
             Path(embeddings_h5_path) if embeddings_h5_path is not None else None
         )
-        self.label_map = label_map
-
         self.features_dataset_name = features_dataset_name
         self.embeddings_dataset_name = embeddings_dataset_name
         self.transform = transform
+        self._length = len(metadata_list)
+
+        # Extraer etiquetas a un tensor ligero y descartar la lista pesada
+        self.labels = torch.tensor(
+            [label_map[meta.category] for meta in metadata_list], 
+            dtype=torch.long
+        )
 
         # Precalcular el mapeo de índice local -> índice de fila HDF5
         if indices is not None:
@@ -61,12 +69,8 @@ class KnowledgeDistillationDataset(Dataset):
                 except (ValueError, TypeError):
                     self._h5_indices.append(i)
 
-        # Apertura perezosa por proceso/worker para compatibilidad con DataLoader
-        self.h5_features = None
-        self.h5_embeddings = None
-
     def __len__(self) -> int:
-        return len(self.metadata_list)
+        return self._length
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         # Apertura perezosa de los archivos HDF5
@@ -92,9 +96,7 @@ class KnowledgeDistillationDataset(Dataset):
             e = torch.empty(0, dtype=torch.float32)
 
         # 3. Obtener Y (Etiqueta de clasificación)
-        meta = self.metadata_list[idx]
-        y_int = self.label_map[meta.category]
-        y = torch.tensor(y_int, dtype=torch.long)
+        y = self.labels[idx]
 
         return x, e, y
 

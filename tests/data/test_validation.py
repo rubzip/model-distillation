@@ -68,16 +68,13 @@ class TestValidation(unittest.TestCase):
             split="TRAIN",
             category="beach",  # Not in label_map
         )
-        dataset = KnowledgeDistillationDataset(
-            metadata_list=invalid_metas,
-            features_h5_path=self.features_h5,
-            embeddings_h5_path=self.embeddings_h5,
-            label_map=self.label_map,
-        )
-        validator = DatasetValidator(dataset)
         with self.assertRaises(KeyError):
-            validator.check_labels()
-        dataset.close()
+            dataset = KnowledgeDistillationDataset(
+                metadata_list=invalid_metas,
+                features_h5_path=self.features_h5,
+                embeddings_h5_path=self.embeddings_h5,
+                label_map=self.label_map,
+            )
 
     def test_detects_out_of_bounds_index(self):
         invalid_metas = list(self.valid_metas)
@@ -142,15 +139,9 @@ class TestValidation(unittest.TestCase):
             )
         ]
 
-        train_ds = KnowledgeDistillationDataset(train_metas, self.features_h5, self.label_map)
-        val_ds = KnowledgeDistillationDataset(val_metas, self.features_h5, self.label_map)
-
         with self.assertRaises(ValueError) as ctx:
-            check_split_leakage(train_ds, val_ds)
+            check_split_leakage(train_metas, val_metas)
         self.assertIn("Data leakage", str(ctx.exception))
-
-        train_ds.close()
-        val_ds.close()
 
 
 if __name__ == "__main__":
