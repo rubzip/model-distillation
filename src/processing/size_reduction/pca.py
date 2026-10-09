@@ -20,7 +20,7 @@ class PCAEmbeddingReducer(BaseProcessing):
 
     def fit(self, h5_path: Union[str, Path], batch_size: int = 1024, dataset_key: str = "data") -> None:
         import h5py
-        print(f"Ajustando PCA (Target Dim: {self.target_dim})...")
+        print(f"Fitting PCA (Target Dim: {self.target_dim})...")
         buffer = []
         fitted_batches = 0
 
@@ -39,20 +39,20 @@ class PCAEmbeddingReducer(BaseProcessing):
 
             if embeddings.ndim != 2:
                 raise ValueError(
-                    f"Se esperaba array 2D [Batch, Dim], pero se recibió forma {embeddings.shape}"
+                    f"Expected 2D array [Batch, Dim], but received shape {embeddings.shape}"
                 )
 
             buffer.append(embeddings)
             total_buffered = sum(b.shape[0] for b in buffer)
 
-            # IncrementalPCA requiere que cada lote tenga al menos target_dim muestras
+            # IncrementalPCA requires each batch to have at least target_dim samples
             if total_buffered >= self.target_dim:
                 merged = np.concatenate(buffer, axis=0) if len(buffer) > 1 else buffer[0]
                 self.pca.partial_fit(merged)
                 fitted_batches += 1
                 buffer.clear()
 
-        # Si quedaron muestras pendientes en el buffer
+        # If there are pending samples in the buffer
         if buffer:
             total_buffered = sum(b.shape[0] for b in buffer)
             if total_buffered >= self.target_dim:
@@ -61,64 +61,64 @@ class PCAEmbeddingReducer(BaseProcessing):
                 fitted_batches += 1
             elif fitted_batches == 0:
                 raise ValueError(
-                    f"Se requieren al menos {self.target_dim} muestras totales para ajustar PCA, "
-                    f"pero solo se encontraron {total_buffered}."
+                    f"At least {self.target_dim} total samples required to fit PCA, "
+                    f"but only {total_buffered} were found."
                 )
             else:
                 print(
-                    f"Aviso: Se omitieron {total_buffered} muestras residuales finales (menor a target_dim={self.target_dim})."
+                    f"Warning: {total_buffered} residual samples were omitted (less than target_dim={self.target_dim})."
                 )
 
         self.is_fitted = True
-        print(f"PCA Ajustado. Varianza retenida: {sum(self.get_retained_variance()):.4f}")
+        print(f"PCA Fitted. Retained variance: {sum(self.get_retained_variance()):.4f}")
 
     def get_retained_variance(self) -> np.ndarray:
         if not self.is_fitted:
-            raise ValueError("El PCA no está entrenado.")
+            raise ValueError("PCA is not fitted.")
         return self.pca.explained_variance_ratio_
 
     def save(self, filepath: Union[Path, str]) -> None:
-        """Guarda el modelo ajustado a disco."""
+        """Saves the fitted model to disk."""
         if not self.is_fitted:
-            raise ValueError("No se puede guardar un PCA que no está ajustado.")
+            raise ValueError("Cannot save a PCA that is not fitted.")
         filepath = Path(filepath)
         filepath.parent.mkdir(parents=True, exist_ok=True)
         joblib.dump(
             {"pca": self.pca, "target_dim": self.target_dim, "is_fitted": self.is_fitted}, filepath
         )
-        print(f"PCA guardado en {filepath}")
+        print(f"PCA saved to {filepath}")
 
     def load(self, filepath: Union[Path, str]) -> None:
-        """Carga un modelo previamente ajustado desde disco."""
+        """Loads a previously fitted model from disk."""
         filepath = Path(filepath)
         if not filepath.exists():
-            raise FileNotFoundError(f"Archivo PCA no encontrado: {filepath}")
+            raise FileNotFoundError(f"PCA file not found: {filepath}")
         state = joblib.load(filepath)
         self.pca = state["pca"]
         self.target_dim = state["target_dim"]
         self.is_fitted = state.get("is_fitted", True)
-        print(f"PCA cargado desde {filepath}")
+        print(f"PCA loaded from {filepath}")
 
     @classmethod
     def from_file(cls, filepath: Union[Path, str]) -> "PCAEmbeddingReducer":
-        """Instancia y carga un reducer directamente desde archivo."""
+        """Instantiates and loads a reducer directly from a file."""
         instance = cls(target_dim=1)
         instance.load(filepath)
         return instance
 
     def process(self, e: Union[np.ndarray, torch.Tensor]) -> Union[np.ndarray, torch.Tensor]:
         if not self.is_fitted:
-            raise ValueError("El PCA no está entrenado. Llama a fit() o load() primero.")
+            raise ValueError("PCA is not fitted. Call fit() or load() first.")
 
         is_tensor = isinstance(e, torch.Tensor)
         device = e.device if is_tensor else None
 
-        # Convertir a numpy para sklearn
+        # Convert to numpy for sklearn
         e_np = e.detach().cpu().numpy() if is_tensor else e
 
         reduced_np = self.pca.transform(e_np)
 
-        # Devolver en el mismo formato que entró
+        # Return in the same format as input
         if is_tensor:
             return torch.from_numpy(reduced_np).to(device)
         return reduced_np

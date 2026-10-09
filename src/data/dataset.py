@@ -21,21 +21,21 @@ class KnowledgeDistillationDataset(Dataset):
         transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
     ):
         """
-        Dataset que une características de audio, embeddings precomputados y metadatos.
-        Diseñado para ser seguro con multiprocesamiento (num_workers > 0) y subconjuntos (train/val/test).
+        Dataset that merges audio features, precomputed embeddings, and metadata.
+        Designed to be multiprocessing-safe (num_workers > 0) and split-aware (train/val/test).
 
         Args:
-            metadata_list: Lista de metadatos de los segmentos (puede ser un subconjunto filtrado).
-            features_h5_path: Ruta al archivo HDF5 con las características (espectrogramas).
-            label_map: Diccionario {categoría: índice_entero}.
-            embeddings_h5_path: Ruta opcional al HDF5 de embeddings de profesor/reducidos.
-            features_dataset_name: Nombre del dataset en features_h5.
-            embeddings_dataset_name: Nombre del dataset en embeddings_h5.
-            indices: Mapeo explícito opcional de índices hacia filas del HDF5.
-                     Si no se proporciona, se infiere automáticamente a partir de int(meta.id).
-            transform: Función de transformación/aumento de datos opcional aplicada a 'x'.
+            metadata_list: List of segment metadata (can be a filtered subset).
+            features_h5_path: Path to the HDF5 file containing the features (spectrograms).
+            label_map: Dictionary {category: integer_index}.
+            embeddings_h5_path: Optional path to the teacher/reduced embeddings HDF5.
+            features_dataset_name: Dataset name in features_h5.
+            embeddings_dataset_name: Dataset name in embeddings_h5.
+            indices: Optional explicit mapping of indices to HDF5 rows.
+                     If not provided, inferred automatically from int(meta.id).
+            transform: Optional data transformation/augmentation function applied to 'x'.
         """
-        # Apertura perezosa por proceso/worker para compatibilidad con DataLoader
+        # Lazy opening per process/worker for DataLoader compatibility
         self.h5_features = None
         self.h5_embeddings = None
 
@@ -48,17 +48,17 @@ class KnowledgeDistillationDataset(Dataset):
         self.transform = transform
         self._length = len(metadata_list)
 
-        # Extraer etiquetas a un tensor ligero y descartar la lista pesada
+        # Extract labels into a lightweight tensor and discard the heavy list
         self.labels = torch.tensor(
             [label_map[meta.category] for meta in metadata_list], 
             dtype=torch.long
         )
 
-        # Precalcular el mapeo de índice local -> índice de fila HDF5
+        # Precompute local index -> HDF5 row index mapping
         if indices is not None:
             if len(indices) != len(metadata_list):
                 raise ValueError(
-                    f"Longitud de indices ({len(indices)}) no coincide con metadata_list ({len(metadata_list)})"
+                    f"Length of indices ({len(indices)}) does not match metadata_list ({len(metadata_list)})"
                 )
             self._h5_indices = list(indices)
         else:
@@ -73,7 +73,7 @@ class KnowledgeDistillationDataset(Dataset):
         return self._length
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        # Apertura perezosa de los archivos HDF5
+        # Lazy opening of HDF5 files
         if self.h5_features is None:
             self.h5_features = h5py.File(self.features_h5_path, "r", swmr=True)
         if self.h5_embeddings is None and self.embeddings_h5_path is not None:
@@ -81,27 +81,27 @@ class KnowledgeDistillationDataset(Dataset):
 
         h5_row = self._h5_indices[idx]
 
-        # 1. Obtener X (Características: STFT, MelSpec, etc.)
+        # 1. Get X (Features: STFT, MelSpec, etc.)
         x_np = self.h5_features[self.features_dataset_name][h5_row]
         x = torch.from_numpy(x_np)
 
         if self.transform is not None:
             x = self.transform(x)
 
-        # 2. Obtener E (Embedding precomputado o reducido por PCA)
+        # 2. Get E (Precomputed or PCA reduced embedding)
         if self.h5_embeddings is not None:
             e_np = self.h5_embeddings[self.embeddings_dataset_name][h5_row]
             e = torch.from_numpy(e_np)
         else:
             e = torch.empty(0, dtype=torch.float32)
 
-        # 3. Obtener Y (Etiqueta de clasificación)
+        # 3. Get Y (Classification label)
         y = self.labels[idx]
 
         return x, e, y
 
     def close(self):
-        """Cierra de forma segura los archivos HDF5 abiertos."""
+        """Safely closes the open HDF5 files."""
         if self.h5_features is not None:
             try:
                 self.h5_features.close()

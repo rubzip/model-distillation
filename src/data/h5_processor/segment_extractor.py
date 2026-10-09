@@ -20,7 +20,7 @@ class H5SegmentExtractor:
         output_meta_path: Path | str,
         target_sr: int = 16000,
         segment_steps: int = 16000,
-        write_batch_size: int = 512,  # Cuántos segmentos acumular en RAM antes de volcarlos al disco
+        write_batch_size: int = 512,  # How many segments to accumulate in RAM before flushing to disk
     ):
         self.output_h5_path = Path(output_h5_path)
         self.output_meta_path = Path(output_meta_path)
@@ -65,7 +65,7 @@ class H5SegmentExtractor:
         return self._resamplers[orig_sr](waveform)
 
     def _load_and_resample(self, filepath: Path | str, prefered_channel: Optional[int] = None) -> torch.Tensor:
-        """Carga el audio y lo remuestrea si es necesario usando torchaudio o soundfile."""
+        """Loads the audio and resamples it if necessary using torchaudio or soundfile."""
         w, sr = self._load(filepath)
         w = self._to_mono(w, prefered_channel)
         w = self._resample(w, sr)
@@ -74,14 +74,14 @@ class H5SegmentExtractor:
     def _extract_segments(
         self, waveform: torch.Tensor
     ) -> Generator[Tuple[int, int, torch.Tensor], None, None]:
-        """Generador que recorta el audio. Si el último segmento es corto, le hace padding con ceros."""
+        """Generator that slices the audio. If the last segment is short, pads it with zeros."""
         total_steps = waveform.shape[1]
 
         for start in range(0, total_steps, self.segment_steps):
             end = start + self.segment_steps
             chunk = waveform[:, start:end]
 
-            # Garantizar que el tamaño sea EXACTAMENTE segment_steps (Padding)
+            # Ensure the size is EXACTLY segment_steps (Padding)
             if chunk.shape[1] < self.segment_steps:
                 pad_amount = self.segment_steps - chunk.shape[1]
                 chunk = F.pad(chunk, (0, pad_amount))
@@ -89,31 +89,31 @@ class H5SegmentExtractor:
             yield start, min(end, total_steps), chunk
 
     def _flush_buffer(self, dataset: h5py.Dataset) -> None:
-        """Vuelca el buffer de RAM al disco HDF5 en un solo bloque y lo vacía."""
+        """Flushes the RAM buffer to the HDF5 disk in a single block and empties it."""
         if not self._audio_buffer:
             return
 
-        # Apilar todos los tensores del buffer [Batch, 1, Steps] y quitar la dimensión de canal -> [Batch, Steps]
+        # Stack all tensors in the buffer [Batch, 1, Steps] and remove channel dim -> [Batch, Steps]
         batch_tensor = torch.cat(self._audio_buffer, dim=0)
         batch_numpy = batch_tensor.cpu().numpy()
 
-        # Expandir el HDF5 y escribir
+        # Expand the HDF5 and write
         current_size = dataset.shape[0]
         dataset.resize((current_size + batch_numpy.shape[0], self.segment_steps))
         dataset[current_size:] = batch_numpy
 
-        # Vaciar buffer
+        # Clear buffer
         self._audio_buffer.clear()
 
     def _save_master_metadata(self) -> None:
-        """Serializa la metadata ligera a un único JSON masivo."""
+        """Serializes the lightweight metadata into a single massive JSON."""
         serialized_list = []
         for meta in self.segment_metadata_list:
             meta_dict = asdict(meta)
 
-            # Serialización segura para JSON
+            # Safe serialization for JSON
             meta_dict["original_fname"] = str(meta_dict["original_fname"])
-            meta_dict["split"] = str(meta_dict["split"])  # StrEnum a string
+            meta_dict["split"] = str(meta_dict["split"])  # StrEnum to string
 
             serialized_list.append(meta_dict)
 
@@ -121,15 +121,15 @@ class H5SegmentExtractor:
             json.dump(serialized_list, f, indent=2, ensure_ascii=False)
 
     def process_file(self, base_meta: AudioMetadata, dataset: h5py.Dataset) -> None:
-        """Procesa un solo archivo original y alimenta el buffer/metadata."""
+        """Processes a single original file and feeds the buffer/metadata."""
         try:
             waveform = self._load_and_resample(base_meta.fname)
 
             for start_step, end_step, chunk in self._extract_segments(waveform):
-                # El ID es simplemente el índice de fila como string (ej. "0000005")
+                # The ID is simply the row index as a string (e.g. "0000005")
                 segment_id = f"{self._global_counter:07d}"
 
-                # Crear metadato ligero con timestamps calculados y provenance completa
+                # Create lightweight metadata with calculated timestamps and full provenance
                 segment_meta = AudioSegmentMetadata(
                     id=segment_id,
                     original_fname=base_meta.fname,
@@ -147,29 +147,29 @@ class H5SegmentExtractor:
                 self._audio_buffer.append(chunk)
                 self._global_counter += 1
 
-                # Volcar a disco si el buffer está lleno
+                # Flush to disk if buffer is full
                 if len(self._audio_buffer) >= self.write_batch_size:
                     self._flush_buffer(dataset)
 
         except Exception as e:
-            print(f"Error crítico procesando {base_meta.fname}: {e}")
+            print(f"Critical error processing {base_meta.fname}: {e}")
 
     def run(self, original_metadata_list: List[AudioMetadata]) -> List[AudioSegmentMetadata]:
-        """Orquestador principal."""
-        print(f"Iniciando extracción. HDF5: {self.output_h5_path}")
+        """Main orchestrator."""
+        print(f"Starting extraction. HDF5: {self.output_h5_path}")
 
         with h5py.File(self.output_h5_path, "w") as h5f:
-            # Crear dataset expansible para el audio con chunks alineados al buffer
+            # Create expandable dataset for the audio with chunks aligned to the buffer
             dataset = h5f.create_dataset(
                 "audio_segments",
-                shape=(0, self.segment_steps),  # Dimensión inicial 0
+                shape=(0, self.segment_steps),  # Initial dimension 0
                 maxshape=(
                     None,
                     self.segment_steps,
-                ),  # La primera dimensión puede crecer al infinito
+                ),  # The first dimension can grow infinitely
                 dtype="float32",
                 chunks=(self.write_batch_size, self.segment_steps),
-                compression="lzf",  # Compresión muy rápida
+                compression="lzf",  # Very fast compression
             )
 
             for idx, base_meta in enumerate(original_metadata_list):
@@ -177,21 +177,21 @@ class H5SegmentExtractor:
 
                 if (idx + 1) % 50 == 0:
                     print(
-                        f"Archivos originales procesados: {idx + 1}/{len(original_metadata_list)}"
+                        f"Original files processed: {idx + 1}/{len(original_metadata_list)}"
                     )
 
-            # Escribir los segmentos restantes que no llenaron el último buffer
+            # Write the remaining segments that didn't fill the last buffer
             self._flush_buffer(dataset)
 
-            # Guardar atributos de configuración en el HDF5
+            # Save configuration attributes in the HDF5
             h5f.attrs["target_sr"] = self.target_sr
             h5f.attrs["segment_steps"] = self.segment_steps
             h5f.attrs["total_segments"] = self._global_counter
 
-        print(f"Guardando metadata maestra en {self.output_meta_path}...")
+        print(f"Saving master metadata to {self.output_meta_path}...")
         self._save_master_metadata()
 
-        print(f"¡Éxito! Se generaron {self._global_counter} segmentos perfectos.")
+        print(f"Success! {self._global_counter} perfect segments were generated.")
         return self.segment_metadata_list
 
     def set_output(self, output_h5_path: Path | str, output_meta_path: Path | str) -> None:

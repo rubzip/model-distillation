@@ -31,11 +31,11 @@ class H5EmbeddingProcessor(AbstractH5BatchProcessor):
 
     def _process_batch(self, batch_tensor: torch.Tensor) -> torch.Tensor:
         if self.add_channel_dim and batch_tensor.dim() == 2:
-            batch_tensor = batch_tensor.unsqueeze(1)  # Añade canal [Batch, 1, Time]
+            batch_tensor = batch_tensor.unsqueeze(1)  # Adds channel [Batch, 1, Time]
 
         embeddings = self.processor(batch_tensor)
 
-        # Aplanar dimensiones sobrantes preservando SIEMPRE la dimensión de batch (dim 0)
+        # Flatten excess dimensions ALWAYS preserving the batch dimension (dim 0)
         if embeddings.dim() > 2:
             embeddings = torch.flatten(embeddings, start_dim=1)
 

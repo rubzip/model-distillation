@@ -36,8 +36,8 @@ class AbstractH5BatchProcessor(ABC):
     @abstractmethod
     def _process_batch(self, batch_tensor: torch.Tensor) -> torch.Tensor:
         """
-        Las clases hijas DEBEN implementar este método.
-        Toma un tensor del HDF5 y devuelve el tensor procesado.
+        Child classes MUST implement this method.
+        Takes a tensor from the HDF5 and returns the processed tensor.
         """
         pass
 
@@ -47,28 +47,28 @@ class AbstractH5BatchProcessor(ABC):
         available = list(h5_in.keys())
         if len(available) == 1:
             print(
-                f" -> Aviso: '{self.input_dataset_name}' no encontrado. Usando único dataset disponible: '{available[0]}'"
+                f" -> Warning: '{self.input_dataset_name}' not found. Using only available dataset: '{available[0]}'"
             )
             return h5_in[available[0]]
         raise KeyError(
-            f"Dataset '{self.input_dataset_name}' no encontrado en {self.input_h5_path}. Disponibles: {available}"
+            f"Dataset '{self.input_dataset_name}' not found in {self.input_h5_path}. Available: {available}"
         )
 
     def _infer_shape(self, h5_in: h5py.File) -> tuple:
-        """Pase de prueba genérico para descubrir las dimensiones de salida."""
+        """Generic test pass to discover output dimensions."""
         input_dataset = self._get_input_dataset(h5_in)
-        dummy_np = input_dataset[0:1]  # Cargar 1 solo ejemplo
+        dummy_np = input_dataset[0:1]  # Load 1 single example
         dummy_tensor = torch.from_numpy(dummy_np).to(self.device)
 
         with torch.no_grad():
             dummy_out = self._process_batch(dummy_tensor)
 
-        return tuple(dummy_out.shape[1:])  # Ignorar la dimensión de batch (la 0)
+        return tuple(dummy_out.shape[1:])  # Ignore the batch dimension (0)
 
     @torch.no_grad()
     def run(self) -> None:
-        """El orquestador común que maneja todo el I/O masivo."""
-        print(f"\n[{self.__class__.__name__}] Iniciando...")
+        """The common orchestrator that handles all massive I/O."""
+        print(f"\n[{self.__class__.__name__}] Starting...")
         print(f" -> Input:  {self.input_h5_path}")
         print(f" -> Output: {self.output_h5_path}")
 
@@ -79,12 +79,12 @@ class AbstractH5BatchProcessor(ABC):
             input_dataset = self._get_input_dataset(h5_in)
             total_items = input_dataset.shape[0]
 
-            # Inferencia de forma y pre-asignación
+            # Shape inference and pre-allocation
             output_shape = self._infer_shape(h5_in)
             final_shape = (total_items,) + output_shape
-            print(f" -> Forma detectada: {final_shape}")
+            print(f" -> Detected shape: {final_shape}")
 
-            # Configurar chunking optimizado para I/O y DataLoader
+            # Configure optimized chunking for I/O and DataLoader
             chunk_batch = min(self.batch_size, 128, max(total_items, 1))
             chunks = (chunk_batch,) + output_shape
 
@@ -103,21 +103,21 @@ class AbstractH5BatchProcessor(ABC):
                 start_idx = i * self.batch_size
                 end_idx = min(start_idx + self.batch_size, total_items)
 
-                # Leer de disco a GPU/CPU
+                # Read from disk to GPU/CPU
                 batch_np = input_dataset[start_idx:end_idx]
                 batch_tensor = torch.from_numpy(batch_np).to(self.device)
 
-                # ¡AQUÍ SE LLAMA A LA LÓGICA DE LA CLASE HIJA!
+                # CHILD CLASS LOGIC IS CALLED HERE!
                 processed_tensor = self._process_batch(batch_tensor)
 
-                # De GPU/CPU a disco
+                # From GPU/CPU to disk
                 output_dataset[start_idx:end_idx] = processed_tensor.cpu().numpy()
 
-                # Progreso
+                # Progress
                 if (i + 1) % 10 == 0 or i == num_batches - 1:
                     print(
                         f"\r -> Batch {i + 1}/{num_batches} ({(end_idx / total_items) * 100:.1f}%)",
                         end="",
                     )
 
-        print("\n -> ¡Proceso finalizado con éxito!")
+        print("\n -> Process finished successfully!")
