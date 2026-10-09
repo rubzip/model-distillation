@@ -1,7 +1,7 @@
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Generator, List, Tuple
+from typing import Generator, List, Tuple, Optional
 
 import h5py
 import soundfile as sf
@@ -24,25 +24,23 @@ class H5SegmentExtractor:
     ):
         self.output_h5_path = Path(output_h5_path)
         self.output_meta_path = Path(output_meta_path)
+
+        self.output_h5_path.parent.mkdir(parents=True, exist_ok=True)
+        self.output_meta_path.parent.mkdir(parents=True, exist_ok=True)
+
         self.target_sr = target_sr
         self.segment_steps = segment_steps
         self.write_batch_size = write_batch_size
 
-        # Crear directorios si no existen
-        self.output_h5_path.parent.mkdir(parents=True, exist_ok=True)
-        self.output_meta_path.parent.mkdir(parents=True, exist_ok=True)
-
         self.segment_metadata_list: List[AudioSegmentMetadata] = []
-        self._global_counter = 0
-        self._audio_buffer: List[torch.Tensor] = []
+        self._global_counter: int = 0
+        self._audio_buffer: list[torch.Tensor] = []
         self._resamplers: dict[int, T.Resample] = {}
-
-    def _load_and_resample(self, filepath: Path | str) -> torch.Tensor:
-        """Carga el audio y lo remuestrea si es necesario usando torchaudio o soundfile."""
+    
+    def _load(self, filepath: Path | str) -> torch.Tensor:
         try:
             waveform, sr = torchaudio.load(filepath)
         except Exception:
-            # Fallback a soundfile para máxima compatibilidad multiplataforma
             data, sr = sf.read(filepath, dtype="float32")
             waveform = torch.from_numpy(data)
             if waveform.ndim == 1:
@@ -50,17 +48,28 @@ class H5SegmentExtractor:
             else:
                 waveform = waveform.t()
 
-        # Convertir a mono si tiene múltiples canales (promediando)
-        if waveform.shape[0] > 1:
-            waveform = torch.mean(waveform, dim=0, keepdim=True)
+        return waveform, sr
+    
+    def _to_mono(self, waveform: torch.Tensor, prefered_channel: Optional[int] = None) -> torch.Tensor:
+        if waveform.shape[0] == 1:
+            return waveform
+        if prefered_channel is not None and 0 <= prefered_channel < waveform.shape[0]:
+            return waveform[prefered_channel: prefered_channel]
+        return torch.mean(waveform, dim=0, keepdim=True)
+    
+    def _resample(self, waveform: torch.Tensor, orig_sr: int) -> torch.Tensor:
+        if orig_sr == self.target_sr:
+            return waveform
+        if orig_sr not in self._resamplers:
+            self._resamplers[orig_sr] = T.Resample(orig_freq=orig_sr, new_freq=self.target_sr)
+        return self._resamplers[orig_sr](waveform)
 
-        # Remuestrear con resampler en caché
-        if sr != self.target_sr:
-            if sr not in self._resamplers:
-                self._resamplers[sr] = T.Resample(orig_freq=sr, new_freq=self.target_sr)
-            waveform = self._resamplers[sr](waveform)
-
-        return waveform
+    def _load_and_resample(self, filepath: Path | str, prefered_channel: Optional[int] = None) -> torch.Tensor:
+        """Carga el audio y lo remuestrea si es necesario usando torchaudio o soundfile."""
+        w, sr = self._load(filepath)
+        w = self._to_mono(w, prefered_channel)
+        w = self._resample(w, sr)
+        return w
 
     def _extract_segments(
         self, waveform: torch.Tensor

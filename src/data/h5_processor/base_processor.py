@@ -23,7 +23,7 @@ class AbstractH5BatchProcessor(ABC):
         self.input_h5_path = Path(input_h5_path)
         self.output_h5_path = Path(output_h5_path)
 
-        self.processor = processor.to(device).eval() # .eval() ??
+        self.processor = processor.to(device) # .eval() ??
 
         self.input_dataset_name = input_dataset_name
         self.output_dataset_name = output_dataset_name
