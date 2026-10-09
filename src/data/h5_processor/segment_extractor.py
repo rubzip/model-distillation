@@ -1,7 +1,7 @@
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Generator, List, Tuple, Optional
+from typing import Generator, List, Optional, Tuple
 
 import h5py
 import soundfile as sf
@@ -36,7 +36,7 @@ class H5SegmentExtractor:
         self._global_counter: int = 0
         self._audio_buffer: list[torch.Tensor] = []
         self._resamplers: dict[int, T.Resample] = {}
-    
+
     def _load(self, filepath: Path | str) -> torch.Tensor:
         try:
             waveform, sr = torchaudio.load(filepath)
@@ -49,14 +49,14 @@ class H5SegmentExtractor:
                 waveform = waveform.t()
 
         return waveform, sr
-    
+
     def _to_mono(self, waveform: torch.Tensor, prefered_channel: Optional[int] = None) -> torch.Tensor:
         if waveform.shape[0] == 1:
             return waveform
         if prefered_channel is not None and 0 <= prefered_channel < waveform.shape[0]:
             return waveform[prefered_channel: prefered_channel]
         return torch.mean(waveform, dim=0, keepdim=True)
-    
+
     def _resample(self, waveform: torch.Tensor, orig_sr: int) -> torch.Tensor:
         if orig_sr == self.target_sr:
             return waveform

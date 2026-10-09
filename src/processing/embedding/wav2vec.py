@@ -10,9 +10,9 @@ class Wav2VecProcessor:
         if input_sr != self.bundle.sample_rate:
             raise ValueError(
                 f"Input sample rate ({input_sr}) does not match the model's expected sample rate ({self.bundle.sample_rate}). Please resample the audio before processing.")
-        
+
         self.model.eval()
-    
+
     def to(self, device: torch.device) -> None:
         self.model = self.model.to(device)
         self.device = device

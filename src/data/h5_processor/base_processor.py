@@ -1,7 +1,7 @@
 import math
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, Union
+from typing import Union
 
 import h5py
 import torch
@@ -23,7 +23,8 @@ class AbstractH5BatchProcessor(ABC):
         self.input_h5_path = Path(input_h5_path)
         self.output_h5_path = Path(output_h5_path)
 
-        self.processor = processor.to(device) # .eval() ??
+        self.processor = processor.to(device)
+        self.processor.eval()
 
         self.input_dataset_name = input_dataset_name
         self.output_dataset_name = output_dataset_name

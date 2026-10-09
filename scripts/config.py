@@ -1,7 +1,6 @@
-from src.processing.feature_extraction.mel import MelProcessor
 from src.processing.embedding.vggish import VGGishProcessor
+from src.processing.feature_extraction.mel import MelProcessor
 from src.processing.size_reduction.pca import PCAEmbeddingReducer
-
 
 # ==========================================
 # 2. AUDIO & PROCESSING HYPERPARAMETERS

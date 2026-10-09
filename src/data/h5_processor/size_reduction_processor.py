@@ -1,16 +1,11 @@
 from pathlib import Path
 from typing import Union
 
-import joblib
-import numpy as np
 import torch
-from sklearn.decomposition import IncrementalPCA
-from torch.utils.data import DataLoader
 
-from .base_processor import AbstractH5BatchProcessor
 from src.processing.base import BaseProcessing
 
-
+from .base_processor import AbstractH5BatchProcessor
 
 
 class H5SizeReductionProcessor(AbstractH5BatchProcessor):
@@ -48,8 +43,8 @@ class H5SizeReductionProcessor(AbstractH5BatchProcessor):
                 f"pero recibió un tensor {batch_tensor.dim()}D."
             )
 
-        # Como nuestro reductor ahora maneja tensores nativamente en su método transform(),
+        # Como nuestro reductor ahora maneja tensores nativamente en su método process(),
         # la delegación es directa y limpia.
-        reduced_tensor = self.processor.transform(batch_tensor)
+        reduced_tensor = self.processor.process(batch_tensor)
 
         return reduced_tensor

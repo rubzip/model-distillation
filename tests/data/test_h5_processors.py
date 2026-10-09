@@ -107,19 +107,25 @@ class TestH5Processors(unittest.TestCase):
         reducer = PCAEmbeddingReducer(target_dim=4)
 
         # Batches where each batch is smaller than target_dim (e.g. 2 samples per batch)
-        small_batches = [
+        # Write batches to an HDF5 file
+        h5_path = self.base_path / "test_pca.h5"
+        full_data = torch.cat([
             torch.randn(2, 8),
             torch.randn(2, 8),
             torch.randn(3, 8),
             torch.randn(1, 8),  # Total 8 samples >= target_dim=4
-        ]
-        # Should not raise ValueError even though individual batches < target_dim
-        reducer.fit(small_batches)
+        ], dim=0).numpy()
+
+        with h5py.File(h5_path, "w") as f:
+            f.create_dataset("data", data=full_data)
+
+        # Should not raise ValueError even though internal chunking might fetch small batches
+        reducer.fit(h5_path, batch_size=2)
         self.assertTrue(reducer.is_fitted)
 
-        # Test transform
+        # Test process
         sample = torch.randn(5, 8)
-        transformed = reducer.transform(sample)
+        transformed = reducer.process(sample)
         self.assertIsInstance(transformed, torch.Tensor)
         self.assertEqual(transformed.shape, (5, 4))
 
@@ -132,7 +138,7 @@ class TestH5Processors(unittest.TestCase):
         self.assertTrue(loaded_reducer.is_fitted)
         self.assertEqual(loaded_reducer.target_dim, 4)
 
-        loaded_transformed = loaded_reducer.transform(sample)
+        loaded_transformed = loaded_reducer.process(sample)
         self.assertTrue(torch.allclose(transformed, loaded_transformed))
 
 

@@ -1,22 +1,21 @@
 import torch
-from torch.utils.data import DataLoader
-import h5py
 
+from scripts.config import EMBEDDING_PROCESSOR, MEL_PROCESSOR, SIZE_REDUCTION_PROCESSOR
+from scripts.split_paths import PATHS
 from src.data.h5_processor import (
-    H5SegmentExtractor,
-    H5FeatureProcessor,
     H5EmbeddingProcessor,
+    H5FeatureProcessor,
+    H5SegmentExtractor,
     H5SizeReductionProcessor,
 )
 from src.data.metadata import load_metadata
-from scripts.config import MEL_PROCESSOR, EMBEDDING_PROCESSOR, SIZE_REDUCTION_PROCESSOR
-from scripts.split_paths import PATHS, SplitPaths
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def run_pipeline():
     extract_segments()
     extract_features()
-    process_embddings()
+    process_embeddings()
     train_size_reduction()
     size_reduction()
 
@@ -24,11 +23,11 @@ def extract_segments():
     for split_name, paths in PATHS.items():
         if not paths.raw_metadata.exists():
             raise
-        
+
         print(f"Loading {split_name} metadata")
         metadata = load_metadata(paths.raw_metadata)
         extractor = H5SegmentExtractor(
-            output_h5_path=paths.segments, 
+            output_h5_path=paths.segments,
             output_meta_path=paths.segments_metadata
         )
         print(f"Extracting {split_name} segments")
@@ -49,7 +48,7 @@ def extract_features():
         )
         feat_processor.run()
 
-def process_embddings():
+def process_embeddings():
     for split_name, paths in PATHS.items():
         if not paths.segments.exists():
             continue
@@ -69,13 +68,7 @@ def train_size_reduction():
     if not train_paths.raw_embeddings.exists():
         raise
 
-    with h5py.File(train_paths.raw_embeddings, "r") as f:
-        train_embeddings_np = f["data"][:]
-    
-    train_tensor = torch.from_numpy(train_embeddings_np)
-    train_loader = DataLoader(train_tensor, batch_size=1024, shuffle=True)
-    
-    SIZE_REDUCTION_PROCESSOR.fit(train_loader)
+    SIZE_REDUCTION_PROCESSOR.fit(train_paths.raw_embeddings)
 
 
 def size_reduction():
@@ -91,7 +84,7 @@ def size_reduction():
             device=DEVICE,
             batch_size=512
         )
-        red_processor.run()    
+        red_processor.run()
 
 if __name__ == "__main__":
     run_pipeline()
