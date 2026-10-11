@@ -1,5 +1,19 @@
 # Acoustic Scene Clasification Model Distillation
-This repo contains a framework for implementing my Masters thesis work (it doesnt contain data nor specific architectures).
+This repository contains a framework for implementing my Masters thesis work (it doesnt contain data nor specific architectures).
+Link to paper.
+
+## Dataset Pipeline
+This code goes from taking a group of audio files to building a fully functional dataset for training similar pipeline as masters work.
+Basically, it is based on distillation of a pretrained audio embedding model meanwhile training a classifier architecture.
+The focus of the work was building a low resource model so the pipeline:
+ 1. Segment all audio files into fixed-size audio segments.
+ 2. Precompute audio embeddings
+ 3. Reduce dimensionality of audio embeddings
+ 4. Precompute feature extraction algorithm (as Mel Spectrogram)
+
+## Why h5 files
+ 1. Keeping different files adds a lot of opening closing delay
+ 2. No ram over
 
 ## Useful Commands (`uv`)
 
