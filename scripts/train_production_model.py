@@ -26,6 +26,8 @@ EMBEDDING_INPUT_SHAPE = (128, 101)
 CLASSIFIER_HIDEN_DIMS = [32, 32]
 CLASSIFIER_DROPOUT = 0.1
 
+NUM_CLASSES = len(LABELS)
+
 def main():
     print("Setting up training...")
     
@@ -39,8 +41,6 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
     
-    num_classes = len(LABELS)
-    
     # 2. Setup Model
     print("Instantiating Production Model...")
 
@@ -52,9 +52,9 @@ def main():
     # Classifier model takes 32 inputs and has FC3 (32 ReLU), FC4 (32 ReLU), FC5 (num_classes logits)
     classifier_model = MLPFactory.create_mlp(
         input_size=SIZE_REDUCTION_DIM,
-        hidden_sizes=[32, 32],
-        num_classes=num_classes,
-        dropout_rate=0.0,
+        hidden_sizes=CLASSIFIER_HIDEN_DIMS,
+        num_classes=NUM_CLASSES,
+        dropout_rate=CLASSIFIER_DROPOUT,
     )
     model = DistillationModel(embedding_model=embedding_model, classifier_model=classifier_model)
 
@@ -81,7 +81,7 @@ def main():
         val_loader=val_loader,
         optimizer=optimizer,
         criterion=criterion,
-        num_classes=num_classes,
+        num_classes=NUM_CLASSES,
         device=device
     )
     
