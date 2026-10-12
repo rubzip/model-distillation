@@ -12,5 +12,5 @@ class VGGishProcessor(BaseProcessing):
         # Stub implementation
         return torch.randn((data.size(0), self.target_dim), device=data.device)
 
-    def to(self, device: torch.device) -> 'VGGishProcessor':
+    def to(self, device: torch.device) -> "VGGishProcessor":
         return self

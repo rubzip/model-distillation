@@ -27,6 +27,6 @@ class MelProcessor(BaseProcessing):
         mel_spec_db = torchaudio.transforms.AmplitudeToDB()(mel_spec)
         return mel_spec_db
 
-    def to(self, device: torch.device) -> 'MelProcessor':
+    def to(self, device: torch.device) -> "MelProcessor":
         self.mel_transform = self.mel_transform.to(device)
         return self

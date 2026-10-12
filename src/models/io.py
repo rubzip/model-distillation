@@ -22,4 +22,3 @@ def load_distillation_model(
     model.load_state_dict(torch.load(path, map_location=dev, weights_only=True))
     model.to(dev)
     return model
-

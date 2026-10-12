@@ -1,10 +1,15 @@
-from config import LABELS_DICT
 from src.data.dataset import KnowledgeDistillationDataset
 from src.data.metadata import load_segment_metadata
 from src.data.split_paths import SplitPaths
 
 
-def load_dataset(paths: SplitPaths, label_map: dict[str, int]) -> KnowledgeDistillationDataset:
+def load_dataset(
+    paths: SplitPaths, label_map: dict[str, int] | None = None
+) -> KnowledgeDistillationDataset:
+    if label_map is None:
+        from config import LABELS_DICT
+
+        label_map = LABELS_DICT
     metadata_list = load_segment_metadata(paths.segments_metadata)
 
     return KnowledgeDistillationDataset(

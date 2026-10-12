@@ -12,11 +12,11 @@ class BaseProcessing(ABC):
         pass
 
     @abstractmethod
-    def to(self, device: torch.device) -> 'BaseProcessing':
+    def to(self, device: torch.device) -> "BaseProcessing":
         pass
 
     def eval(self):
-        if hasattr(super(), 'eval'):
+        if hasattr(super(), "eval"):
             super().eval()
         for attr_name in dir(self):
             try:

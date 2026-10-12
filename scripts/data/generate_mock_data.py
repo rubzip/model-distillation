@@ -4,17 +4,18 @@ import uuid
 from pathlib import Path
 
 # Fix python path for script execution
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import numpy as np
 import soundfile as sf
-from src.data.metadata import AudioMetadata
 
 from config import LABELS, MOCK_PATHS
+from src.data.metadata import AudioMetadata
 
 SAMPLING_RATES = [16000, 22050, 44100]
 LENGTHS_IN_SECONDS = [1.5, 3.0, 5.0]
 NUM_CHANNELS = [1, 2]
+
 
 def generate_mock_audio(meta: AudioMetadata):
     """Generates a dummy sine wave audio file for the metadata."""
@@ -80,6 +81,7 @@ def generate_dataset(num_train=50, num_val=10, num_test=10):
             json.dump(metadata_list, f, indent=4)
 
         print(f" -> Saved {paths.raw_metadata}")
+
 
 if __name__ == "__main__":
     np.random.seed(42)

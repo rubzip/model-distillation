@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 # Fix python path for script execution
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import torch
 
@@ -18,12 +18,14 @@ from src.data.metadata import load_metadata
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PATHS = MOCK_PATHS
 
+
 def run_pipeline():
     extract_segments()
     extract_features()
     process_embeddings()
     train_size_reduction()
     size_reduction()
+
 
 def extract_segments():
     for split_name, paths in PATHS.items():
@@ -33,11 +35,11 @@ def extract_segments():
         print(f"Loading {split_name} metadata")
         metadata = load_metadata(paths.raw_metadata)
         extractor = H5SegmentExtractor(
-            output_h5_path=paths.segments,
-            output_meta_path=paths.segments_metadata
+            output_h5_path=paths.segments, output_meta_path=paths.segments_metadata
         )
         print(f"Extracting {split_name} segments")
         extractor.run(metadata)
+
 
 def extract_features():
     for split_name, paths in PATHS.items():
@@ -50,9 +52,10 @@ def extract_features():
             output_h5_path=paths.features,
             processor=MEL_PROCESSOR,
             device=DEVICE,
-            batch_size=512
+            batch_size=512,
         )
         feat_processor.run()
+
 
 def process_embeddings():
     for split_name, paths in PATHS.items():
@@ -65,9 +68,10 @@ def process_embeddings():
             output_h5_path=paths.raw_embeddings,
             processor=EMBEDDING_PROCESSOR,
             device=DEVICE,
-            batch_size=256
+            batch_size=256,
         )
         emb_processor.run()
+
 
 def train_size_reduction():
     train_paths = PATHS["train"]
@@ -88,9 +92,10 @@ def size_reduction():
             output_h5_path=paths.embeddings,
             reducer=SIZE_REDUCTION_PROCESSOR,
             device=DEVICE,
-            batch_size=512
+            batch_size=512,
         )
         red_processor.run()
+
 
 if __name__ == "__main__":
     run_pipeline()

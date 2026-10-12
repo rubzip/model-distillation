@@ -5,14 +5,16 @@ import torch.nn as nn
 
 class MLPFactory:
     @staticmethod
-    def create_mlp(input_size: int, hidden_sizes: list[int], num_classes: int, dropout_rate: float = 0.5) -> nn.Module:
+    def create_mlp(
+        input_size: int, hidden_sizes: list[int], num_classes: int, dropout_rate: float = 0.5
+    ) -> nn.Module:
         if input_size <= 0:
             raise ValueError(f"Input size must be positive, got {input_size}")
         if num_classes <= 0:
             raise ValueError(f"Number of classes must be positive, got {num_classes}")
         if not (0 <= dropout_rate < 1.0):
             raise ValueError(f"Dropout rate must be in [0, 1), got {dropout_rate}")
-            
+
         layers = []
         prev_size = input_size
 

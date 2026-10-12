@@ -30,4 +30,3 @@ class DistillationModel(nn.Module):
         _, y = self(x)
         c = torch.argmax(y, dim=-1)
         return c
-

@@ -14,4 +14,3 @@ class DumbEmbedding(nn.Module):
         x = self.flatten(x)
         x = self.linear(x)
         return x
-

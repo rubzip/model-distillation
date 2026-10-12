@@ -1,8 +1,8 @@
+from .architectures import DumbEmbedding, MLPFactory, VGGishFactory
 from .distillation_model import DistillationModel
 from .io import load_distillation_model, save_distillation_model
 from .performance import get_operations_MFlop, get_size_MBytes
 from .validation import validate_model, validate_output, validate_shapes
-from .architectures import MLPFactory, DumbEmbedding, VGGishFactory
 
 __all__ = [
     "DistillationModel",
@@ -17,4 +17,3 @@ __all__ = [
     "DumbEmbedding",
     "VGGishFactory",
 ]
-

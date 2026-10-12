@@ -114,7 +114,9 @@ class TestArchitectures(unittest.TestCase):
         with self.assertRaises(ValueError):
             MLPFactory.create_mlp(input_size=10, hidden_sizes=[-1], num_classes=2)
         with self.assertRaises(ValueError):
-            MLPFactory.create_mlp(input_size=10, hidden_sizes=[10], num_classes=2, dropout_rate=-0.1)
+            MLPFactory.create_mlp(
+                input_size=10, hidden_sizes=[10], num_classes=2, dropout_rate=-0.1
+            )
         with self.assertRaises(ValueError):
             MLPFactory.create_mlp(input_size=10, hidden_sizes=[10], num_classes=2, dropout_rate=1.0)
 

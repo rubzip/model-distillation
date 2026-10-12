@@ -27,7 +27,8 @@ def load_metadata(fname: Path) -> list[AudioMetadata]:
         metadata_list = json.load(f)
     return [AudioMetadata(**item) for item in metadata_list]
 
-def load_segment_metadata(fname: Path) -> list['AudioSegmentMetadata']:
+
+def load_segment_metadata(fname: Path) -> list["AudioSegmentMetadata"]:
     with open(fname, "r") as f:
         metadata_list = json.load(f)
     return [AudioSegmentMetadata(**item) for item in metadata_list]

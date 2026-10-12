@@ -15,21 +15,24 @@ class PCAEmbeddingReducer(BaseProcessing):
         self.pca = IncrementalPCA(n_components=target_dim)
         self.is_fitted = False
 
-    def to(self, device: torch.device) -> 'PCAEmbeddingReducer':
+    def to(self, device: torch.device) -> "PCAEmbeddingReducer":
         return self
 
-    def fit(self, h5_path: Union[str, Path], batch_size: int = 1024, dataset_key: str = "data") -> None:
+    def fit(
+        self, h5_path: Union[str, Path], batch_size: int = 1024, dataset_key: str = "data"
+    ) -> None:
         import h5py
+
         print(f"Fitting PCA (Target Dim: {self.target_dim})...")
         buffer = []
         fitted_batches = 0
 
         def data_iterator():
-            with h5py.File(h5_path, 'r') as f:
+            with h5py.File(h5_path, "r") as f:
                 data = f[dataset_key]
                 n_samples = data.shape[0]
                 for i in range(0, n_samples, batch_size):
-                    yield data[i:i + batch_size]
+                    yield data[i : i + batch_size]
 
         iterator = data_iterator()
 

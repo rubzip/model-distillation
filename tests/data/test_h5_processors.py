@@ -109,12 +109,15 @@ class TestH5Processors(unittest.TestCase):
         # Batches where each batch is smaller than target_dim (e.g. 2 samples per batch)
         # Write batches to an HDF5 file
         h5_path = self.base_path / "test_pca.h5"
-        full_data = torch.cat([
-            torch.randn(2, 8),
-            torch.randn(2, 8),
-            torch.randn(3, 8),
-            torch.randn(1, 8),  # Total 8 samples >= target_dim=4
-        ], dim=0).numpy()
+        full_data = torch.cat(
+            [
+                torch.randn(2, 8),
+                torch.randn(2, 8),
+                torch.randn(3, 8),
+                torch.randn(1, 8),  # Total 8 samples >= target_dim=4
+            ],
+            dim=0,
+        ).numpy()
 
         with h5py.File(h5_path, "w") as f:
             f.create_dataset("data", data=full_data)

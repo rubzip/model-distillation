@@ -38,4 +38,3 @@ def get_operations_MFlop(
     finally:
         if was_training:
             model.train()
-

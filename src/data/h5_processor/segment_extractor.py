@@ -50,11 +50,13 @@ class H5SegmentExtractor:
 
         return waveform, sr
 
-    def _to_mono(self, waveform: torch.Tensor, prefered_channel: Optional[int] = None) -> torch.Tensor:
+    def _to_mono(
+        self, waveform: torch.Tensor, prefered_channel: Optional[int] = None
+    ) -> torch.Tensor:
         if waveform.shape[0] == 1:
             return waveform
         if prefered_channel is not None and 0 <= prefered_channel < waveform.shape[0]:
-            return waveform[prefered_channel: prefered_channel]
+            return waveform[prefered_channel:prefered_channel]
         return torch.mean(waveform, dim=0, keepdim=True)
 
     def _resample(self, waveform: torch.Tensor, orig_sr: int) -> torch.Tensor:
@@ -64,7 +66,9 @@ class H5SegmentExtractor:
             self._resamplers[orig_sr] = T.Resample(orig_freq=orig_sr, new_freq=self.target_sr)
         return self._resamplers[orig_sr](waveform)
 
-    def _load_and_resample(self, filepath: Path | str, prefered_channel: Optional[int] = None) -> torch.Tensor:
+    def _load_and_resample(
+        self, filepath: Path | str, prefered_channel: Optional[int] = None
+    ) -> torch.Tensor:
         """Loads the audio and resamples it if necessary using torchaudio or soundfile."""
         w, sr = self._load(filepath)
         w = self._to_mono(w, prefered_channel)
@@ -176,9 +180,7 @@ class H5SegmentExtractor:
                 self.process_file(base_meta, dataset)
 
                 if (idx + 1) % 50 == 0:
-                    print(
-                        f"Original files processed: {idx + 1}/{len(original_metadata_list)}"
-                    )
+                    print(f"Original files processed: {idx + 1}/{len(original_metadata_list)}")
 
             # Write the remaining segments that didn't fill the last buffer
             self._flush_buffer(dataset)
