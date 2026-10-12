@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 
 from config import LABELS, LABELS_DICT, MOCK_PATHS, SIZE_REDUCTION_DIM
 from src.data.load_dataset import load_dataset
-from src.models import DistillationModel, MLPFactory, VGGishFactory
+from src.models import DistillationModel, MLPFactory, VGGishFactory, save_distillation_model
 from src.training.criterion import DistillationCriterion
 from src.training.early_stopping import EarlyStopping
 from src.training.train import train_distillation_model
@@ -27,6 +27,8 @@ CLASSIFIER_HIDEN_DIMS = [32, 32]
 CLASSIFIER_DROPOUT = 0.1
 
 NUM_CLASSES = len(LABELS)
+
+MODEL_NAME = "production_distillation_model.pt"
 
 
 def main():
@@ -89,6 +91,9 @@ def main():
     print(f"Training finished. Best epoch: {best_epoch}")
     print(f"Final Validation Accuracy: {history.results[-1].accuracy:.4f}")
 
+    print("Saving model...")
+    model_save_path = train_paths.models_dir / MODEL_NAME
+    save_distillation_model(model, model_save_path)
 
 if __name__ == "__main__":
     main()

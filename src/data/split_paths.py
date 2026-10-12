@@ -25,7 +25,7 @@ class SplitPaths:
 
     @property
     def raw_metadata(self) -> Path:
-        return self.base_dir / self.raw_embeddings_path / f"{self.split_name}_{self.metadata_name}"
+        return self.base_dir / self.metadata_path / f"{self.split_name}_{self.metadata_name}"
 
     @property
     def segments_metadata(self) -> Path:
